@@ -1,0 +1,933 @@
+/* =========================================================
+   FakeShield — Premium AI / Futuristic UI
+   ========================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
+
+/* =========================
+   RESET
+   ========================= */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Archivo", Arial, sans-serif;
+  background:
+    radial-gradient(
+      circle at 50% -10%,
+      rgba(43, 110, 255, 0.16),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 90% 40%,
+      rgba(120, 70, 255, 0.08),
+      transparent 30%
+    ),
+    #050811;
+
+  color: #f5f7ff;
+  min-height: 100vh;
+}
+
+/* =========================
+   APP
+   ========================= */
+
+.app {
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* subtle background grid */
+
+.app::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+
+  background-image:
+    linear-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    );
+
+  background-size: 70px 70px;
+
+  mask-image: linear-gradient(
+    to bottom,
+    black,
+    transparent 85%
+  );
+
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* =========================
+   NAVBAR
+   ========================= */
+
+.navbar {
+  height: 88px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 7%;
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  background: rgba(5, 8, 17, 0.72);
+
+  backdrop-filter: blur(18px);
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Logo */
+
+.logo {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+
+  background: linear-gradient(
+    100deg,
+    #ffffff 15%,
+    #68a7ff 55%,
+    #9d7cff 100%
+  );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Online status */
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  color: #a9b6d0;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  letter-spacing: 0.2px;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: #20e889;
+
+  box-shadow:
+    0 0 8px rgba(32, 232, 137, 0.9),
+    0 0 20px rgba(32, 232, 137, 0.35);
+
+  animation: pulse 2s infinite;
+}
+
+/* =========================
+   MAIN
+   ========================= */
+
+.main-content {
+  width: min(1180px, 90%);
+
+  margin: auto;
+
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   HERO
+   ========================= */
+
+.hero {
+  text-align: center;
+
+  padding: 125px 20px 85px;
+}
+
+/* small label */
+
+.hero::before {
+  content: "AI-POWERED AUTHENTICITY ENGINE";
+
+  display: inline-block;
+
+  margin-bottom: 28px;
+
+  font-size: 12px;
+  font-weight: 800;
+
+  letter-spacing: 3px;
+
+  color: #5fa4ff;
+
+  border: 1px solid rgba(95, 164, 255, 0.22);
+
+  background: rgba(50, 110, 255, 0.07);
+
+  padding: 9px 17px;
+
+  border-radius: 999px;
+
+  box-shadow: 0 0 30px rgba(40, 100, 255, 0.08);
+}
+
+/* Main heading: AI-POWERED */
+
+.hero h1 {
+  max-width: 1050px;
+
+  margin: auto;
+
+  font-size: clamp(52px, 7.5vw, 100px);
+
+  line-height: 1;
+
+  font-weight: 900;
+
+  letter-spacing: -4px;
+
+  color: #f8f9ff;
+
+  text-transform: uppercase;
+}
+
+/* Gradient heading: DEEPFAKE DETECTION in one line & slightly smaller */
+
+.hero h1 span {
+  display: block;
+
+  margin-top: 10px;
+
+  font-size: 0.8em; /* AI-POWERED se size thodi kam */
+
+  white-space: nowrap; /* Single line me rakhne ke liye */
+
+  letter-spacing: -3px;
+
+  background: linear-gradient(
+    100deg,
+    #249cff 0%,
+    #5c8fff 35%,
+    #8578ff 70%,
+    #b36cff 100%
+  );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  color: transparent;
+
+  filter: drop-shadow(0 10px 35px rgba(80, 110, 255, 0.2));
+}
+
+/* Hero paragraph */
+
+.hero p {
+  max-width: 680px;
+
+  margin: 35px auto 0;
+
+  font-size: 17px;
+
+  line-height: 1.7;
+
+  color: #8f9db8;
+
+  font-weight: 500;
+}
+
+/* =========================
+   UPLOAD CARD
+   ========================= */
+
+.upload-card {
+  position: relative;
+
+  padding: 28px;
+
+  border-radius: 30px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(20, 30, 52, 0.88),
+    rgba(8, 13, 25, 0.92)
+  );
+
+  border: 1px solid rgba(120, 160, 255, 0.17);
+
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+  backdrop-filter: blur(20px);
+}
+
+/* blue glow behind card */
+
+.upload-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 400px;
+  height: 200px;
+
+  left: 50%;
+  top: -100px;
+
+  transform: translateX(-50%);
+
+  background: rgba(45, 120, 255, 0.13);
+
+  filter: blur(90px);
+
+  pointer-events: none;
+}
+
+/* =========================
+   UPLOAD AREA
+   ========================= */
+
+.upload-area {
+  min-height: 430px;
+
+  border-radius: 24px;
+
+  border: 1px dashed rgba(91, 137, 210, 0.42);
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(45, 110, 255, 0.07),
+      transparent 45%
+    ),
+    rgba(8, 14, 28, 0.72);
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 35px;
+
+  position: relative;
+
+  transition:
+    border-color 0.3s ease,
+    background 0.3s ease,
+    transform 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: rgba(90, 157, 255, 0.75);
+
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      rgba(45, 110, 255, 0.11),
+      transparent 50%
+    ),
+    rgba(8, 14, 28, 0.85);
+}
+
+/* =========================
+   UPLOAD ICON
+   ========================= */
+
+.upload-icon {
+  width: 72px;
+  height: 72px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 22px;
+
+  font-size: 42px;
+  font-weight: 300;
+
+  color: #68a7ff;
+
+  background: linear-gradient(
+    145deg,
+    rgba(48, 105, 255, 0.18),
+    rgba(112, 76, 255, 0.12)
+  );
+
+  border: 1px solid rgba(96, 145, 255, 0.25);
+
+  box-shadow: 0 15px 40px rgba(45, 105, 255, 0.15);
+}
+
+/* =========================
+   UPLOAD TEXT
+   ========================= */
+
+.upload-area h2 {
+  margin-top: 26px;
+
+  font-size: 27px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.7px;
+}
+
+.upload-area p {
+  margin-top: 10px;
+
+  color: #8290aa;
+
+  font-size: 15px;
+
+  text-align: center;
+}
+
+/* =========================
+   IMAGE PREVIEW & CROSS BUTTON
+   ========================= */
+
+.preview-container {
+  position: relative; /* Image aur button ke alignment ke liye */
+  display: inline-block;
+  max-width: 100%;
+}
+
+.preview-image {
+  width: auto;
+  max-width: 100%;
+  max-height: 420px;
+
+  object-fit: contain;
+
+  border-radius: 18px;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+
+  display: block;
+}
+
+/* Cross Button (Top Right Corner of Image) */
+
+.remove-image-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  width: 36px;
+  height: 36px;
+
+  border-radius: 50%;
+
+  background: rgba(15, 23, 42, 0.75);
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  color: #ffffff;
+
+  font-size: 20px;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  backdrop-filter: blur(8px);
+
+  transition: all 0.2s ease;
+
+  z-index: 10;
+}
+
+.remove-image-button:hover {
+  background: rgba(255, 50, 75, 0.85);
+  border-color: rgba(255, 70, 90, 0.5);
+  transform: scale(1.1);
+}
+
+/* =========================
+   CHOOSE BUTTON
+   ========================= */
+
+.choose-button {
+  margin-top: 28px;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-width: 210px;
+
+  padding: 15px 25px;
+
+  border-radius: 13px;
+
+  background: #18243b;
+
+  border: 1px solid rgba(120, 155, 220, 0.22);
+
+  color: #f4f7ff;
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.choose-button:hover {
+  transform: translateY(-2px);
+
+  background: #21314f;
+
+  border-color: rgba(110, 164, 255, 0.5);
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* =========================
+   ANALYZE BUTTON
+   ========================= */
+
+.analyze-button {
+  width: 100%;
+
+  margin-top: 22px;
+
+  padding: 19px;
+
+  border: none;
+
+  border-radius: 14px;
+
+  background: linear-gradient(
+    100deg,
+    #247eff,
+    #5e7cff,
+    #8c69ff
+  );
+
+  color: white;
+
+  font-family: inherit;
+
+  font-size: 16px;
+
+  font-weight: 800;
+
+  letter-spacing: 0.2px;
+
+  cursor: pointer;
+
+  box-shadow: 0 15px 40px rgba(63, 110, 255, 0.22);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.analyze-button:hover:not(:disabled) {
+  transform: translateY(-3px);
+
+  filter: brightness(1.08);
+
+  box-shadow: 0 20px 55px rgba(63, 110, 255, 0.36);
+}
+
+.analyze-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.analyze-button:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+/* =========================
+   ERROR
+   ========================= */
+
+.error-box {
+  margin-top: 20px;
+
+  padding: 17px 20px;
+
+  border-radius: 14px;
+
+  color: #ff9da8;
+
+  background: rgba(255, 50, 75, 0.07);
+
+  border: 1px solid rgba(255, 70, 90, 0.28);
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+/* =========================
+   RESULT CARD
+   ========================= */
+
+.result-card {
+  margin-top: 30px;
+
+  padding: 32px;
+
+  border-radius: 28px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(17, 26, 45, 0.92),
+    rgba(8, 13, 25, 0.95)
+  );
+
+  border: 1px solid rgba(120, 155, 220, 0.15);
+
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3);
+}
+
+.result-card h2 {
+  font-size: 28px;
+
+  font-weight: 800;
+
+  letter-spacing: -1px;
+
+  margin-bottom: 25px;
+}
+
+/* =========================
+   RESULT INFO
+   ========================= */
+
+.result-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+/* Result item */
+
+.result-item,
+.prediction {
+  min-height: 72px;
+
+  padding: 18px 22px;
+
+  border-radius: 15px;
+
+  background: rgba(13, 22, 39, 0.8);
+
+  border: 1px solid rgba(120, 155, 220, 0.13);
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.result-item:hover,
+.prediction:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(100, 150, 255, 0.28);
+}
+
+/* labels */
+
+.result-item span,
+.prediction span {
+  display: block;
+
+  color: #8392ae;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  margin-bottom: 7px;
+}
+
+/* numbers */
+
+.result-item strong {
+  font-size: 20px;
+
+  font-weight: 800;
+
+  color: #ffffff;
+}
+
+/* prediction */
+
+.prediction > div:last-child {
+  text-align: right;
+}
+
+.prediction strong {
+  font-size: 20px;
+
+  font-weight: 800;
+}
+
+/* =========================
+   REAL / FAKE
+   ========================= */
+
+.real {
+  color: #35e890 !important;
+
+  text-shadow: 0 0 20px rgba(53, 232, 144, 0.18);
+}
+
+.fake {
+  color: #ff5470 !important;
+
+  text-shadow: 0 0 20px rgba(255, 84, 112, 0.18);
+}
+
+/* =========================
+   MESSAGE
+   ========================= */
+
+.result-message {
+  margin-top: 20px;
+
+  padding: 16px 20px;
+
+  border-radius: 13px;
+
+  color: #8e9bb4;
+
+  background: rgba(255, 255, 255, 0.025);
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  font-size: 14px;
+}
+
+/* =========================
+   ANIMATIONS
+   ========================= */
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+
+    transform: scale(1);
+
+    box-shadow:
+      0 0 8px rgba(32, 232, 137, 0.9),
+      0 0 20px rgba(32, 232, 137, 0.35);
+  }
+
+  50% {
+    opacity: 0.65;
+
+    transform: scale(0.85);
+
+    box-shadow: 0 0 4px rgba(32, 232, 137, 0.5);
+  }
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+
+@media (max-width: 900px) {
+  .navbar {
+    padding: 0 5%;
+  }
+
+  .hero {
+    padding-top: 90px;
+  }
+
+  .hero h1 {
+    font-size: clamp(40px, 8vw, 70px);
+
+    letter-spacing: -3px;
+  }
+
+  .hero h1 span {
+    white-space: normal; /* Mobile me wrapping allow taaki screen se bahar na jaye */
+  }
+
+  .upload-card {
+    padding: 18px;
+  }
+
+  .upload-area {
+    min-height: 360px;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    height: 72px;
+  }
+
+  .logo {
+    font-size: 21px;
+  }
+
+  .status {
+    font-size: 12px;
+  }
+
+  .hero {
+    padding: 70px 10px 55px;
+  }
+
+  .hero::before {
+    font-size: 9px;
+
+    letter-spacing: 2px;
+
+    padding: 8px 12px;
+  }
+
+  .hero h1 {
+    font-size: 38px;
+
+    line-height: 1.1;
+
+    letter-spacing: -2px;
+  }
+
+  .hero h1 span {
+    font-size: 0.75em;
+  }
+
+  .hero p {
+    font-size: 14px;
+
+    margin-top: 28px;
+  }
+
+  .upload-card {
+    padding: 12px;
+
+    border-radius: 22px;
+  }
+
+  .upload-area {
+    min-height: 320px;
+
+    padding: 20px;
+  }
+
+  .preview-image {
+    max-height: 300px;
+  }
+
+  .result-card {
+    padding: 22px;
+
+    border-radius: 22px;
+  }
+
+  .result-card h2 {
+    font-size: 23px;
+  }
+
+  .result-item,
+  .prediction {
+    padding: 15px;
+
+    min-height: 65px;
+  }
+
+  .prediction strong,
+  .result-item strong {
+    font-size: 17px;
+  }
+}
+
+/* =========================
+   SELECTION
+   ========================= */
+
+::selection {
+  background: rgba(83, 133, 255, 0.35);
+
+  color: white;
+}
+
+/* =========================
+   SCROLLBAR
+   ========================= */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050811;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #263653;
+
+  border-radius: 20px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3c5680;
+}

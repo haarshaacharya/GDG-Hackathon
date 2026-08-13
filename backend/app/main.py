@@ -1,4 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -16,8 +18,32 @@ app = FastAPI(
 )
 
 
+# --------------------------------------------------
+# CORS
+# --------------------------------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# --------------------------------------------------
+# Face Detection Model
+# --------------------------------------------------
+
 MODEL_PATH = "models/face_detector.tflite"
 
+
+# --------------------------------------------------
+# Root
+# --------------------------------------------------
 
 @app.get("/")
 def root():
@@ -27,6 +53,10 @@ def root():
     }
 
 
+# --------------------------------------------------
+# Health Check
+# --------------------------------------------------
+
 @app.get("/health")
 def health_check():
     return {
@@ -34,6 +64,10 @@ def health_check():
         "service": "FakeShield Backend"
     }
 
+
+# --------------------------------------------------
+# Image Prediction
+# --------------------------------------------------
 
 @app.post("/predict")
 async def predict_image(file: UploadFile = File(...)):
@@ -48,7 +82,7 @@ async def predict_image(file: UploadFile = File(...)):
     # Read uploaded image
     image_bytes = await file.read()
 
-    # Convert bytes → NumPy array
+    # Convert bytes to NumPy array
     image_array = np.frombuffer(
         image_bytes,
         dtype=np.uint8
@@ -66,9 +100,9 @@ async def predict_image(file: UploadFile = File(...)):
             detail="Could not read the uploaded image."
         )
 
-    # --------------------------------
+    # --------------------------------------------------
     # Create MediaPipe face detector
-    # --------------------------------
+    # --------------------------------------------------
 
     base_options = python.BaseOptions(
         model_asset_path=MODEL_PATH
@@ -86,7 +120,7 @@ async def predict_image(file: UploadFile = File(...)):
 
     try:
 
-        # BGR → RGB
+        # BGR -> RGB
         rgb_frame = cv2.cvtColor(
             frame,
             cv2.COLOR_BGR2RGB
@@ -100,8 +134,11 @@ async def predict_image(file: UploadFile = File(...)):
         # Detect faces
         result = detector.detect(mp_image)
 
-        if not result.detections:
+        # --------------------------------------------------
+        # No face found
+        # --------------------------------------------------
 
+        if not result.detections:
             return {
                 "success": True,
                 "faces_detected": 0,
@@ -112,9 +149,9 @@ async def predict_image(file: UploadFile = File(...)):
 
         frame_height, frame_width = frame.shape[:2]
 
-        # --------------------------------
-        # Process each detected face
-        # --------------------------------
+        # --------------------------------------------------
+        # Process every detected face
+        # --------------------------------------------------
 
         for detection in result.detections:
 
@@ -133,6 +170,7 @@ async def predict_image(file: UploadFile = File(...)):
                 bbox.origin_y + bbox.height
             )
 
+            # Crop face
             face_crop = frame[
                 y1:y2,
                 x1:x2
@@ -141,7 +179,7 @@ async def predict_image(file: UploadFile = File(...)):
             if face_crop.size == 0:
                 continue
 
-            # Resize face
+            # Resize face for AI model
             face_input = cv2.resize(
                 face_crop,
                 (224, 224)
@@ -160,13 +198,20 @@ async def predict_image(file: UploadFile = File(...)):
                 )
             })
 
-        if not predictions:
+        # --------------------------------------------------
+        # Face processing failed
+        # --------------------------------------------------
 
+        if not predictions:
             return {
                 "success": True,
                 "faces_detected": 0,
                 "message": "Face crop could not be processed."
             }
+
+        # --------------------------------------------------
+        # Final response
+        # --------------------------------------------------
 
         return {
             "success": True,
@@ -175,5 +220,4 @@ async def predict_image(file: UploadFile = File(...)):
         }
 
     finally:
-
         detector.close()
