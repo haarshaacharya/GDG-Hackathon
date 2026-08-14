@@ -52,10 +52,8 @@ function App() {
   // Actual AI analysis FPS tracking
   const analysisTimesRef = useRef([]);
 
-  // Target AI analysis rate
-  // Camera preview can remain 30 FPS,
-  // while backend analysis runs around 5 FPS.
-  const AI_INTERVAL = 200;
+  // Target AI analysis rate (~15 FPS)
+  const AI_INTERVAL = 30;
 
   // =====================================================
   // RESTORE IMAGE AFTER REFRESH
@@ -550,7 +548,7 @@ function App() {
 
     setFps(
       Math.min(
-        10,
+        30,
         Math.round(
           actualFps
         )
@@ -641,7 +639,7 @@ function App() {
         // We don't need to send huge frames.
         // The backend already resizes each face to 224x224.
 
-        const maxWidth = 640;
+        const maxWidth = 480;
 
         let captureWidth = width;
         let captureHeight = height;
@@ -695,7 +693,7 @@ function App() {
               canvas.toBlob(
                 resolve,
                 "image/jpeg",
-                0.55
+                0.50
               )
           );
 
