@@ -1,9 +1,9 @@
 /* =========================================================
-   FakeShield — Premium AI / Futuristic UI
+   FakeShield — Premium AI Deepfake Detection UI
+   Complete App.css
    ========================================================= */
 
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
-
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap");
 
 /* =========================================================
    RESET
@@ -21,7 +21,6 @@ html {
 
 body {
   font-family: "Archivo", Arial, sans-serif;
-
   background:
     radial-gradient(
       circle at 50% -10%,
@@ -30,7 +29,7 @@ body {
     ),
     radial-gradient(
       circle at 90% 40%,
-      rgba(120, 70, 255, 0.08),
+      rgba(120, 70, 255, 0.09),
       transparent 30%
     ),
     #050811;
@@ -38,7 +37,6 @@ body {
   color: #f5f7ff;
   min-height: 100vh;
 }
-
 
 /* =========================================================
    APP
@@ -50,23 +48,19 @@ body {
   position: relative;
 }
 
-
-/* Background grid */
-
 .app::before {
   content: "";
-
   position: fixed;
   inset: 0;
 
   background-image:
     linear-gradient(
-      rgba(255, 255, 255, 0.025) 1px,
+      rgba(255, 255, 255, 0.022) 1px,
       transparent 1px
     ),
     linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.025) 1px,
+      rgba(255, 255, 255, 0.022) 1px,
       transparent 1px
     );
 
@@ -75,13 +69,12 @@ body {
   mask-image: linear-gradient(
     to bottom,
     black,
-    transparent 85%
+    transparent 88%
   );
 
   pointer-events: none;
   z-index: 0;
 }
-
 
 /* =========================================================
    NAVBAR
@@ -98,22 +91,18 @@ body {
 
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 
-  background: rgba(5, 8, 17, 0.72);
+  background: rgba(5, 8, 17, 0.74);
 
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px);
 
   position: sticky;
   top: 0;
-  z-index: 20;
+  z-index: 50;
 }
-
-
-/* Logo */
 
 .logo {
   font-size: 26px;
   font-weight: 900;
-
   letter-spacing: -1.5px;
 
   background: linear-gradient(
@@ -125,25 +114,18 @@ body {
 
   -webkit-background-clip: text;
   background-clip: text;
-
   color: transparent;
 }
-
-
-/* Backend status */
 
 .status {
   display: flex;
   align-items: center;
-
   gap: 10px;
 
   color: #a9b6d0;
 
   font-size: 14px;
   font-weight: 600;
-
-  letter-spacing: 0.2px;
 }
 
 .status-dot {
@@ -161,20 +143,19 @@ body {
   animation: pulse 2s infinite;
 }
 
-
 /* =========================================================
    MAIN
    ========================================================= */
 
 .main-content {
   width: min(1180px, 90%);
-
   margin: auto;
 
   position: relative;
   z-index: 1;
-}
 
+  padding-bottom: 100px;
+}
 
 /* =========================================================
    HERO
@@ -183,11 +164,8 @@ body {
 .hero {
   text-align: center;
 
-  padding: 125px 20px 85px;
+  padding: 120px 20px 80px;
 }
-
-
-/* Small label */
 
 .hero::before {
   content: "AI-POWERED AUTHENTICITY ENGINE";
@@ -215,9 +193,6 @@ body {
     0 0 30px rgba(40, 100, 255, 0.08);
 }
 
-
-/* Main heading */
-
 .hero h1 {
   max-width: 1050px;
 
@@ -235,9 +210,6 @@ body {
 
   text-transform: uppercase;
 }
-
-
-/* Gradient heading */
 
 .hero h1 span {
   display: block;
@@ -269,9 +241,6 @@ body {
     );
 }
 
-
-/* Hero paragraph */
-
 .hero p {
   max-width: 680px;
 
@@ -285,7 +254,6 @@ body {
 
   font-weight: 500;
 }
-
 
 /* =========================================================
    UPLOAD CARD
@@ -301,7 +269,7 @@ body {
   background: linear-gradient(
     145deg,
     rgba(20, 30, 52, 0.88),
-    rgba(8, 13, 25, 0.92)
+    rgba(8, 13, 25, 0.94)
   );
 
   border: 1px solid rgba(120, 160, 255, 0.17);
@@ -312,9 +280,6 @@ body {
 
   backdrop-filter: blur(20px);
 }
-
-
-/* Blue glow */
 
 .upload-card::before {
   content: "";
@@ -335,7 +300,6 @@ body {
 
   pointer-events: none;
 }
-
 
 /* =========================================================
    UPLOAD AREA
@@ -386,7 +350,6 @@ body {
     rgba(8, 14, 28, 0.85);
 }
 
-
 /* =========================================================
    UPLOAD ICON
    ========================================================= */
@@ -419,11 +382,6 @@ body {
     0 15px 40px rgba(45, 105, 255, 0.15);
 }
 
-
-/* =========================================================
-   UPLOAD TEXT
-   ========================================================= */
-
 .upload-area h2 {
   margin-top: 26px;
 
@@ -444,7 +402,6 @@ body {
   text-align: center;
 }
 
-
 /* =========================================================
    IMAGE PREVIEW
    ========================================================= */
@@ -461,6 +418,7 @@ body {
   width: auto;
 
   max-width: 100%;
+
   max-height: 420px;
 
   object-fit: contain;
@@ -475,9 +433,9 @@ body {
   display: block;
 }
 
-
 /* =========================================================
    CROSS BUTTON
+   TOP RIGHT OF IMAGE
    ========================================================= */
 
 .remove-image-button {
@@ -486,18 +444,18 @@ body {
   top: 12px;
   right: 12px;
 
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
 
   border-radius: 50%;
 
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(9, 15, 28, 0.82);
 
   border: 1px solid rgba(255, 255, 255, 0.2);
 
   color: #ffffff;
 
-  font-size: 20px;
+  font-size: 22px;
 
   line-height: 1;
 
@@ -508,22 +466,27 @@ body {
 
   cursor: pointer;
 
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 
-  transition: all 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 
-  z-index: 10;
+  z-index: 20;
 }
 
 .remove-image-button:hover {
-  background: rgba(255, 50, 75, 0.85);
+  background: rgba(255, 50, 75, 0.9);
 
-  border-color:
-    rgba(255, 70, 90, 0.5);
+  border-color: rgba(255, 100, 120, 0.65);
 
   transform: scale(1.1);
-}
 
+  box-shadow:
+    0 8px 25px rgba(255, 50, 75, 0.25);
+}
 
 /* =========================================================
    CHOOSE BUTTON
@@ -545,8 +508,7 @@ body {
 
   background: #18243b;
 
-  border:
-    1px solid rgba(120, 155, 220, 0.22);
+  border: 1px solid rgba(120, 155, 220, 0.22);
 
   color: #f4f7ff;
 
@@ -568,13 +530,11 @@ body {
 
   background: #21314f;
 
-  border-color:
-    rgba(110, 164, 255, 0.5);
+  border-color: rgba(110, 164, 255, 0.5);
 
   box-shadow:
     0 10px 30px rgba(0, 0, 0, 0.25);
 }
-
 
 /* =========================================================
    ANALYZE BUTTON
@@ -638,6 +598,30 @@ body {
   cursor: not-allowed;
 }
 
+/* =========================================================
+   LOADING STATE
+   ========================================================= */
+
+.analyze-button:disabled::before {
+  content: "";
+
+  display: inline-block;
+
+  width: 15px;
+  height: 15px;
+
+  margin-right: 10px;
+
+  vertical-align: -2px;
+
+  border: 2px solid rgba(255, 255, 255, 0.35);
+
+  border-top-color: white;
+
+  border-radius: 50%;
+
+  animation: spin 0.8s linear infinite;
+}
 
 /* =========================================================
    ERROR
@@ -652,91 +636,90 @@ body {
 
   color: #ff9da8;
 
-  background:
-    rgba(255, 50, 75, 0.07);
+  background: rgba(255, 50, 75, 0.07);
 
-  border:
-    1px solid rgba(255, 70, 90, 0.28);
+  border: 1px solid rgba(255, 70, 90, 0.28);
 
   font-size: 14px;
 
   font-weight: 600;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
 }
 
+.error-box::before {
+  content: "!";
+  
+  width: 24px;
+  height: 24px;
+
+  flex-shrink: 0;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(255, 70, 90, 0.15);
+
+  font-weight: 900;
+}
 
 /* =========================================================
    RESULT CARD
    ========================================================= */
 
 .result-card {
-  margin-top: 34px;
+  margin-top: 70px;
 
   padding: 42px;
 
-  border-radius: 28px;
+  border-radius: 30px;
 
   background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(80, 110, 255, 0.10),
+      transparent 32%
+    ),
     linear-gradient(
       145deg,
-      rgba(17, 26, 45, 0.96),
-      rgba(8, 13, 25, 0.98)
+      rgba(17, 27, 48, 0.96),
+      rgba(7, 12, 24, 0.98)
     );
 
-  border:
-    1px solid rgba(120, 155, 220, 0.15);
+  border: 1px solid rgba(120, 155, 220, 0.16);
 
   box-shadow:
-    0 30px 90px rgba(0, 0, 0, 0.3);
+    0 35px 100px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
 
-  position: relative;
-
-  overflow: hidden;
+  animation: resultReveal 0.6s ease both;
 }
-
-
-/* Result card glow */
-
-.result-card::before {
-  content: "";
-
-  position: absolute;
-
-  width: 300px;
-  height: 180px;
-
-  top: -100px;
-  right: -80px;
-
-  background:
-    rgba(80, 110, 255, 0.12);
-
-  filter: blur(80px);
-
-  pointer-events: none;
-}
-
 
 /* =========================================================
    RESULT HEADER
    ========================================================= */
 
 .result-card h2 {
-  font-size: 34px;
+  font-size: 42px;
 
   font-weight: 900;
 
-  letter-spacing: -1.5px;
+  letter-spacing: -2px;
 
-  margin-bottom: 32px;
-
-  color: #f7f9ff;
-
-  position: relative;
+  margin-bottom: 34px;
 }
 
-
 /* =========================================================
-   RESULT INFO
+   RESULT OVERVIEW
+   Works with existing result-item
    ========================================================= */
 
 .result-info {
@@ -745,19 +728,15 @@ body {
   flex-direction: column;
 
   gap: 16px;
-
-  position: relative;
 }
 
-
 /* =========================================================
-   SUMMARY RESULT
+   STATS / RESULT ITEMS
    ========================================================= */
 
-.result-item {
-  width: 100%;
-
-  min-height: 82px;
+.result-item,
+.prediction {
+  min-height: 78px;
 
   padding: 20px 24px;
 
@@ -765,13 +744,12 @@ body {
 
   background:
     linear-gradient(
-      135deg,
-      rgba(20, 32, 55, 0.9),
-      rgba(12, 20, 35, 0.9)
+      145deg,
+      rgba(18, 30, 52, 0.92),
+      rgba(10, 18, 33, 0.92)
     );
 
-  border:
-    1px solid rgba(120, 155, 220, 0.14);
+  border: 1px solid rgba(120, 155, 220, 0.13);
 
   display: flex;
 
@@ -779,7 +757,7 @@ body {
 
   justify-content: space-between;
 
-  gap: 25px;
+  gap: 20px;
 
   transition:
     transform 0.25s ease,
@@ -787,142 +765,76 @@ body {
     background 0.25s ease;
 }
 
-.result-item:hover {
-  transform: translateY(-2px);
+.result-item:hover,
+.prediction:hover {
+  transform: translateY(-3px);
 
-  border-color:
-    rgba(100, 150, 255, 0.32);
+  border-color: rgba(100, 150, 255, 0.3);
 
   background:
     linear-gradient(
-      135deg,
-      rgba(25, 40, 68, 0.95),
-      rgba(13, 22, 39, 0.95)
+      145deg,
+      rgba(22, 37, 65, 0.96),
+      rgba(10, 18, 33, 0.96)
     );
 }
 
-
 /* =========================================================
-   RESULT LABELS
+   LABELS
    ========================================================= */
 
 .result-item span,
 .prediction span {
   display: block;
 
-  color: #8e9db8;
+  color: #8492ad;
 
   font-size: 13px;
 
-  line-height: 1.4;
+  font-weight: 700;
 
-  font-weight: 600;
+  letter-spacing: 0.4px;
 
-  margin-bottom: 8px;
+  text-transform: uppercase;
 
-  letter-spacing: 0.2px;
+  margin-bottom: 7px;
 }
 
-
 /* =========================================================
-   RESULT NUMBERS
+   NUMBERS
    ========================================================= */
 
 .result-item strong {
-  display: block;
-
-  font-size: 24px;
-
-  line-height: 1;
-
-  font-weight: 800;
-
-  color: #ffffff;
-}
-
-
-/* =========================================================
-   PREDICTION CARD
-   ========================================================= */
-
-.prediction {
-  width: 100%;
-
-  min-height: 92px;
-
-  padding: 20px 24px;
-
-  border-radius: 18px;
-
-  background:
-    rgba(10, 18, 32, 0.86);
-
-  border:
-    1px solid rgba(120, 155, 220, 0.12);
-
-  display: grid;
-
-  grid-template-columns: 1fr auto;
-
-  align-items: center;
-
-  gap: 30px;
-
-  transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    background 0.25s ease;
-}
-
-.prediction:hover {
-  transform: translateY(-2px);
-
-  border-color:
-    rgba(100, 150, 255, 0.28);
-
-  background:
-    rgba(15, 26, 46, 0.95);
-}
-
-
-/* Left side of prediction */
-
-.prediction > div:first-child {
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: flex-start;
-
-  justify-content: center;
-}
-
-
-/* Right side */
-
-.prediction > div:last-child {
-  text-align: right;
-
-  min-width: 130px;
-}
-
-
-/* =========================================================
-   PREDICTION RESULT
-   ========================================================= */
-
-.prediction strong {
-  display: block;
-
-  font-size: 23px;
-
-  line-height: 1.15;
+  font-size: 25px;
 
   font-weight: 900;
 
-  letter-spacing: 0.3px;
+  color: #ffffff;
+
+  letter-spacing: -0.5px;
 }
 
+/* =========================================================
+   PREDICTION
+   ========================================================= */
+
+.prediction {
+  min-height: 100px;
+}
+
+.prediction > div:first-child {
+  min-width: 130px;
+}
+
+.prediction > div:last-child {
+  text-align: right;
+}
+
+.prediction strong {
+  font-size: 22px;
+
+  font-weight: 900;
+}
 
 /* =========================================================
    REAL
@@ -932,9 +844,8 @@ body {
   color: #35e890 !important;
 
   text-shadow:
-    0 0 20px rgba(53, 232, 144, 0.18);
+    0 0 22px rgba(53, 232, 144, 0.2);
 }
-
 
 /* =========================================================
    FAKE
@@ -944,111 +855,514 @@ body {
   color: #ff5470 !important;
 
   text-shadow:
-    0 0 20px rgba(255, 84, 112, 0.18);
+    0 0 22px rgba(255, 84, 112, 0.2);
 }
 
-
 /* =========================================================
-   CONFIDENCE
-   ========================================================= */
-
-.prediction > div:last-child strong {
-  color: #f4f7ff;
-
-  font-size: 22px;
-}
-
-
-/* =========================================================
-   FACE-BY-FACE SEPARATION
-   ========================================================= */
-
-.prediction + .prediction {
-  margin-top: 0;
-}
-
-
-/* =========================================================
-   MESSAGE
+   RESULT MESSAGE
    ========================================================= */
 
 .result-message {
-  margin-top: 24px;
+  margin-top: 22px;
 
-  padding: 18px 22px;
+  padding: 18px 20px;
 
   border-radius: 15px;
 
-  color: #9aa8c0;
+  color: #a1aec4;
 
-  background:
-    rgba(255, 255, 255, 0.025);
+  background: rgba(255, 255, 255, 0.025);
 
-  border:
-    1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 
   font-size: 14px;
 
   line-height: 1.6;
-
-  font-weight: 500;
 }
 
-
 /* =========================================================
-   EMPTY / NO FACE MESSAGE
+   ADVANCED RESULT DASHBOARD
+   These classes support the improved result JSX
    ========================================================= */
 
-.result-card:has(.result-message) {
+/* Result top header */
+
+.result-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 30px;
+
+  margin-bottom: 38px;
+}
+
+.result-eyebrow {
+  display: block;
+
+  color: #5fa4ff;
+
+  font-size: 12px;
+
+  font-weight: 800;
+
+  letter-spacing: 3px;
+
+  text-transform: uppercase;
+
+  margin-bottom: 10px;
+}
+
+.result-title {
+  font-size: clamp(38px, 5vw, 64px);
+
+  font-weight: 900;
+
+  letter-spacing: -3px;
+
+  line-height: 0.95;
+}
+
+/* =========================================================
+   VERDICT BADGE
+   ========================================================= */
+
+.verdict-badge {
+  min-width: 150px;
+
+  padding: 15px 22px;
+
+  border-radius: 18px;
+
+  text-align: center;
+
+  font-size: 14px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  background: rgba(255, 255, 255, 0.04);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.verdict-badge.real {
+  color: #35e890 !important;
+
+  background:
+    rgba(53, 232, 144, 0.08);
+
   border-color:
-    rgba(120, 155, 220, 0.18);
+    rgba(53, 232, 144, 0.2);
 }
 
+.verdict-badge.fake {
+  color: #ff5470 !important;
+
+  background:
+    rgba(255, 84, 112, 0.08);
+
+  border-color:
+    rgba(255, 84, 112, 0.2);
+}
 
 /* =========================================================
-   LOADING STATE
+   STAT GRID
    ========================================================= */
 
-.analyze-button:disabled {
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  padding: 25px;
+
+  min-height: 135px;
+
+  border-radius: 20px;
+
   background:
     linear-gradient(
-      100deg,
-      #286fda,
-      #6676e9,
-      #8168dd
+      145deg,
+      rgba(20, 32, 55, 0.92),
+      rgba(9, 16, 30, 0.94)
     );
+
+  border: 1px solid rgba(120, 155, 220, 0.13);
 
   position: relative;
 
   overflow: hidden;
 }
 
-.analyze-button:disabled::after {
+.stat-card::after {
   content: "";
 
   position: absolute;
 
-  top: 0;
-  left: -100%;
+  width: 100px;
+  height: 100px;
 
-  width: 60%;
+  right: -45px;
+  top: -45px;
+
+  background: rgba(80, 130, 255, 0.12);
+
+  filter: blur(35px);
+
+  border-radius: 50%;
+}
+
+.stat-label {
+  color: #8492ad;
+
+  font-size: 12px;
+
+  font-weight: 800;
+
+  letter-spacing: 1px;
+
+  text-transform: uppercase;
+}
+
+.stat-value {
+  display: block;
+
+  margin-top: 14px;
+
+  font-size: 34px;
+
+  line-height: 1;
+
+  font-weight: 900;
+
+  letter-spacing: -1.5px;
+
+  color: #ffffff;
+}
+
+/* =========================================================
+   FACE ANALYSIS SECTION
+   ========================================================= */
+
+.face-analysis {
+  margin-top: 10px;
+}
+
+.face-analysis-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 18px;
+}
+
+.face-analysis-header h3 {
+  font-size: 21px;
+
+  font-weight: 800;
+
+  letter-spacing: -0.5px;
+}
+
+.face-analysis-header span {
+  color: #71809b;
+
+  font-size: 13px;
+
+  font-weight: 600;
+}
+
+/* =========================================================
+   FACE GRID
+   ========================================================= */
+
+.face-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+/* =========================================================
+   FACE CARD
+   ========================================================= */
+
+.face-card {
+  padding: 23px;
+
+  border-radius: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(15, 25, 44, 0.94),
+      rgba(8, 15, 28, 0.96)
+    );
+
+  border: 1px solid rgba(120, 155, 220, 0.12);
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.face-card:hover {
+  transform: translateY(-3px);
+
+  border-color:
+    rgba(100, 150, 255, 0.3);
+
+  box-shadow:
+    0 20px 45px rgba(0, 0, 0, 0.2);
+}
+
+.face-card-top {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 22px;
+}
+
+.face-number {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 12px;
+
+  background:
+    rgba(82, 130, 255, 0.1);
+
+  border: 1px solid
+    rgba(82, 130, 255, 0.18);
+
+  color: #7facff;
+
+  font-size: 13px;
+
+  font-weight: 900;
+}
+
+.face-result {
+  font-size: 14px;
+
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.face-result.real {
+  color: #35e890 !important;
+}
+
+.face-result.fake {
+  color: #ff5470 !important;
+}
+
+/* =========================================================
+   CONFIDENCE
+   ========================================================= */
+
+.confidence-row {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 10px;
+}
+
+.confidence-label {
+  color: #8492ad;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.7px;
+}
+
+.confidence-value {
+  color: #f5f7ff;
+
+  font-size: 14px;
+
+  font-weight: 900;
+}
+
+.confidence-bar {
+  width: 100%;
+
+  height: 7px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.confidence-fill {
   height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #247eff,
+      #6c75ff,
+      #9b68ff
+    );
+
+  transition:
+    width 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.confidence-fill.real {
+  background:
+    linear-gradient(
+      90deg,
+      #1fcf7b,
+      #35e890
+    );
+}
+
+.confidence-fill.fake {
+  background:
+    linear-gradient(
+      90deg,
+      #ff3e60,
+      #ff6a7d
+    );
+}
+
+/* =========================================================
+   NO FACE STATE
+   ========================================================= */
+
+.no-face-state {
+  margin-top: 20px;
+
+  padding: 35px;
+
+  border-radius: 22px;
+
+  text-align: center;
+
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(255, 180, 60, 0.07),
+      transparent 55%
+    ),
+    rgba(14, 22, 38, 0.8);
+
+  border: 1px solid rgba(255, 190, 80, 0.15);
+}
+
+.no-face-icon {
+  width: 60px;
+  height: 60px;
+
+  margin: 0 auto 17px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 18px;
+
+  background: rgba(255, 190, 80, 0.08);
+
+  border: 1px solid rgba(255, 190, 80, 0.16);
+
+  color: #ffc65c;
+
+  font-size: 25px;
+}
+
+.no-face-state h3 {
+  font-size: 21px;
+
+  font-weight: 800;
+
+  margin-bottom: 8px;
+}
+
+.no-face-state p {
+  color: #8290aa;
+
+  font-size: 14px;
+
+  line-height: 1.6;
+}
+
+/* =========================================================
+   ANALYSIS COMPLETE DIVIDER
+   ========================================================= */
+
+.analysis-divider {
+  height: 1px;
+
+  width: 100%;
+
+  margin: 35px 0;
 
   background:
     linear-gradient(
       90deg,
       transparent,
-      rgba(255, 255, 255, 0.18),
+      rgba(120, 155, 220, 0.18),
       transparent
     );
-
-  animation: loadingShimmer 1.4s infinite;
 }
 
-
 /* =========================================================
-   ANIMATIONS
+   RESULT ANIMATION
    ========================================================= */
+
+@keyframes resultReveal {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
 @keyframes pulse {
   0%,
@@ -1072,24 +1386,17 @@ body {
   }
 }
 
-
-@keyframes loadingShimmer {
-  0% {
-    left: -100%;
-  }
-
-  100% {
-    left: 150%;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
-
 
 /* =========================================================
    RESPONSIVE — TABLET
    ========================================================= */
 
 @media (max-width: 900px) {
-
   .navbar {
     padding: 0 5%;
   }
@@ -1099,7 +1406,8 @@ body {
   }
 
   .hero h1 {
-    font-size: clamp(40px, 8vw, 70px);
+    font-size:
+      clamp(40px, 8vw, 70px);
 
     letter-spacing: -3px;
   }
@@ -1120,20 +1428,33 @@ body {
     padding: 30px;
   }
 
-  .result-card h2 {
-    font-size: 30px;
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .face-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .result-header {
+    flex-direction: column;
+  }
+
+  .verdict-badge {
+    align-self: flex-start;
   }
 }
-
 
 /* =========================================================
    RESPONSIVE — MOBILE
    ========================================================= */
 
 @media (max-width: 600px) {
-
   .navbar {
     height: 72px;
+
+    padding: 0 5%;
   }
 
   .logo {
@@ -1174,6 +1495,11 @@ body {
     margin-top: 28px;
   }
 
+  .main-content {
+    width: 92%;
+
+    padding-bottom: 60px;
+  }
 
   /* Upload */
 
@@ -1193,11 +1519,26 @@ body {
     max-height: 300px;
   }
 
+  .remove-image-button {
+    top: 8px;
+    right: 8px;
+
+    width: 34px;
+    height: 34px;
+
+    font-size: 19px;
+  }
+
+  .choose-button {
+    width: 100%;
+
+    min-width: 0;
+  }
 
   /* Result */
 
   .result-card {
-    margin-top: 24px;
+    margin-top: 45px;
 
     padding: 22px;
 
@@ -1205,95 +1546,81 @@ body {
   }
 
   .result-card h2 {
-    font-size: 25px;
+    font-size: 28px;
 
-    margin-bottom: 24px;
+    letter-spacing: -1.5px;
   }
 
+  .result-title {
+    font-size: 42px;
 
-  .result-info {
+    letter-spacing: -2px;
+  }
+
+  .result-eyebrow {
+    font-size: 10px;
+
+    letter-spacing: 2px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+
     gap: 12px;
   }
 
+  .stat-card {
+    min-height: 110px;
 
-  .result-item {
-    min-height: 70px;
+    padding: 20px;
+  }
 
+  .stat-value {
+    font-size: 30px;
+  }
+
+  .result-item,
+  .prediction {
     padding: 16px;
 
-    gap: 15px;
+    min-height: 70px;
   }
-
-
-  .result-item span,
-  .prediction span {
-    font-size: 11px;
-
-    margin-bottom: 6px;
-  }
-
-
-  .result-item strong {
-    font-size: 20px;
-  }
-
-
-  /* Prediction */
 
   .prediction {
-    min-height: 82px;
-
-    padding: 16px;
-
-    grid-template-columns: minmax(0, 1fr) auto;
-
-    gap: 15px;
+    align-items: flex-start;
   }
 
+  .prediction strong,
+  .result-item strong {
+    font-size: 17px;
+  }
 
   .prediction > div:last-child {
-    min-width: 95px;
+    text-align: right;
   }
 
-
-  .prediction strong {
-    font-size: 19px;
+  .face-card {
+    padding: 19px;
   }
 
+  .face-analysis-header {
+    align-items: flex-start;
 
-  .prediction > div:last-child strong {
-    font-size: 18px;
+    gap: 10px;
+
+    flex-direction: column;
   }
 
-
-  .result-message {
-    margin-top: 18px;
-
-    padding: 15px 16px;
-
-    font-size: 13px;
+  .no-face-state {
+    padding: 27px 18px;
   }
 }
 
-
 /* =========================================================
-   VERY SMALL MOBILE
+   SMALL MOBILE
    ========================================================= */
 
-@media (max-width: 400px) {
-
-  .main-content {
-    width: 94%;
-  }
-
-  .hero h1 {
-    font-size: 32px;
-  }
-
-  .hero h1 span {
-    font-size: 0.75em;
-  }
-
+@media (max-width: 380px) {
   .status {
     gap: 6px;
 
@@ -1305,64 +1632,36 @@ body {
     height: 7px;
   }
 
+  .hero h1 {
+    font-size: 33px;
+  }
+
+  .hero h1 span {
+    font-size: 0.72em;
+  }
+
+  .upload-area h2 {
+    font-size: 23px;
+  }
 
   .result-card {
     padding: 18px;
   }
 
-
-  .result-card h2 {
-    font-size: 22px;
-  }
-
-
-  .result-item {
-    padding: 14px;
-
-    min-height: 65px;
-  }
-
-
-  .prediction {
-    padding: 14px;
-
-    grid-template-columns: 1fr;
-
-    gap: 14px;
-  }
-
-
-  .prediction > div:last-child {
-    text-align: left;
-
-    min-width: unset;
-
-    width: 100%;
-
-    padding-top: 12px;
-
-    border-top:
-      1px solid rgba(255, 255, 255, 0.06);
-  }
-
-
-  .prediction > div:last-child strong {
-    font-size: 18px;
+  .result-title {
+    font-size: 36px;
   }
 }
-
 
 /* =========================================================
    SELECTION
    ========================================================= */
 
 ::selection {
-  background:
-    rgba(83, 133, 255, 0.35);
+  background: rgba(83, 133, 255, 0.35);
 
   color: white;
 }
-
 
 /* =========================================================
    SCROLLBAR

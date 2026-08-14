@@ -1,55 +1,136 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 function App() {
+
+  // =====================================================
+  // IMAGE STATES
+  // =====================================================
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Restore image + File after refresh
+
+  // =====================================================
+  // CAMERA STATES
+  // =====================================================
+
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraPredictions, setCameraPredictions] = useState([]);
+  const [cameraFaces, setCameraFaces] = useState(0);
+  const [cameraError, setCameraError] = useState("");
+  const [fps, setFps] = useState(0);
+  const [cameraAnalyzing, setCameraAnalyzing] = useState(false);
+
+
+  // =====================================================
+  // CAMERA REFS
+  // =====================================================
+
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const cameraTimerRef = useRef(null);
+  const lastFrameTimeRef = useRef(0);
+  const frameBusyRef = useRef(false);
+
+
+  // =====================================================
+  // RESTORE IMAGE AFTER REFRESH
+  // =====================================================
+
   useEffect(() => {
-    const savedImage = localStorage.getItem("fakeshield_image");
-    const savedName = localStorage.getItem("fakeshield_filename");
-    const savedType = localStorage.getItem("fakeshield_type");
+
+    const savedImage =
+      localStorage.getItem("fakeshield_image");
+
+    const savedName =
+      localStorage.getItem("fakeshield_filename");
+
+    const savedType =
+      localStorage.getItem("fakeshield_type");
+
 
     if (savedImage) {
+
       setPreview(savedImage);
 
       fetch(savedImage)
         .then((response) => response.blob())
+
         .then((blob) => {
+
           const file = new File(
             [blob],
             savedName || "fakeshield-image.jpg",
             {
-              type: savedType || blob.type || "image/jpeg",
+              type:
+                savedType ||
+                blob.type ||
+                "image/jpeg",
             }
           );
 
           setSelectedFile(file);
+
         })
+
         .catch(() => {
-          setError("Could not restore the saved image.");
+
+          setError(
+            "Could not restore the saved image."
+          );
+
         });
     }
+
   }, []);
 
-  // Select image
+
+  // =====================================================
+  // CLEAN CAMERA WHEN PAGE CLOSES
+  // =====================================================
+
+  useEffect(() => {
+
+    return () => {
+      stopCamera();
+    };
+
+  }, []);
+
+
+  // =====================================================
+  // SELECT IMAGE
+  // =====================================================
+
   const handleFileChange = (event) => {
+
     const file = event.target.files[0];
 
     if (!file) return;
 
+
     if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image.");
+
+      setError(
+        "Please select a valid image."
+      );
+
       return;
     }
 
+
     const reader = new FileReader();
 
+
     reader.onload = () => {
+
       const imageData = reader.result;
 
       setPreview(imageData);
@@ -70,38 +151,63 @@ function App() {
       );
     };
 
+
     reader.readAsDataURL(file);
 
     setSelectedFile(file);
     setResult(null);
     setError("");
 
-    // Allow selecting the same image again
+    // Same image can be selected again
     event.target.value = "";
   };
 
-  // Remove image
+
+  // =====================================================
+  // REMOVE IMAGE
+  // =====================================================
+
   const handleRemoveImage = () => {
+
     setSelectedFile(null);
     setPreview(null);
     setResult(null);
     setError("");
 
-    localStorage.removeItem("fakeshield_image");
-    localStorage.removeItem("fakeshield_filename");
-    localStorage.removeItem("fakeshield_type");
+    localStorage.removeItem(
+      "fakeshield_image"
+    );
+
+    localStorage.removeItem(
+      "fakeshield_filename"
+    );
+
+    localStorage.removeItem(
+      "fakeshield_type"
+    );
   };
 
-  // Analyze image
+
+  // =====================================================
+  // ANALYZE IMAGE
+  // =====================================================
+
   const handleAnalyze = async () => {
+
     if (!selectedFile) {
-      setError("Please select an image first.");
+
+      setError(
+        "Please select an image first."
+      );
+
       return;
     }
+
 
     setLoading(true);
     setResult(null);
     setError("");
+
 
     const formData = new FormData();
 
@@ -110,7 +216,9 @@ function App() {
       selectedFile
     );
 
+
     try {
+
       const response = await fetch(
         "http://127.0.0.1:8000/predict",
         {
@@ -119,72 +227,366 @@ function App() {
         }
       );
 
-      const data = await response.json();
+
+      const data =
+        await response.json();
+
 
       if (!response.ok) {
+
         throw new Error(
-          data.detail || "Something went wrong."
+          data.detail ||
+          "Something went wrong."
         );
       }
 
+
       setResult(data);
+
     } catch (err) {
+
       setError(
         err.message ||
-          "Could not connect to FakeShield backend."
+        "Could not connect to FakeShield backend."
       );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
-  // Get overall result
-  const getOverallResult = () => {
-    if (
-      !result ||
-      !result.predictions ||
-      result.predictions.length === 0
-    ) {
-      return null;
+
+  // =====================================================
+  // START CAMERA
+  // =====================================================
+
+  const startCamera = async () => {
+
+    try {
+
+      setCameraError("");
+      setCameraPredictions([]);
+      setCameraFaces(0);
+      setFps(0);
+
+
+      if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia
+      ) {
+
+        throw new Error(
+          "Camera is not supported by this browser."
+        );
+      }
+
+
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: "user",
+            width: {
+              ideal: 640
+            },
+            height: {
+              ideal: 480
+            }
+          },
+          audio: false
+        });
+
+
+      streamRef.current = stream;
+
+
+      if (videoRef.current) {
+
+        videoRef.current.srcObject =
+          stream;
+
+        await videoRef.current.play();
+      }
+
+
+      setCameraActive(true);
+
+      // Start frame analysis
+      startFrameLoop();
+
+    } catch (err) {
+
+      console.error(err);
+
+      setCameraError(
+        err.message ||
+        "Could not access your camera."
+      );
+
+      setCameraActive(false);
     }
-
-    const fakeFaces = result.predictions.filter(
-      (prediction) =>
-        prediction.result === "FAKE"
-    ).length;
-
-    if (fakeFaces > 0) {
-      return "FAKE";
-    }
-
-    return "REAL";
   };
 
-  // Get overall confidence
-  const getAverageConfidence = () => {
-    if (
-      !result ||
-      !result.predictions ||
-      result.predictions.length === 0
-    ) {
-      return 0;
+
+  // =====================================================
+  // STOP CAMERA
+  // =====================================================
+
+  const stopCamera = () => {
+
+    // Stop timer
+    if (cameraTimerRef.current) {
+
+      clearTimeout(
+        cameraTimerRef.current
+      );
+
+      cameraTimerRef.current = null;
     }
 
-    const total = result.predictions.reduce(
-      (sum, prediction) =>
-        sum + Number(prediction.confidence || 0),
-      0
-    );
 
-    return Math.round(
-      total / result.predictions.length
-    );
+    // Stop camera stream
+    if (streamRef.current) {
+
+      streamRef.current
+        .getTracks()
+        .forEach((track) => {
+          track.stop();
+        });
+
+      streamRef.current = null;
+    }
+
+
+    if (videoRef.current) {
+
+      videoRef.current.srcObject = null;
+    }
+
+
+    frameBusyRef.current = false;
+
+    setCameraActive(false);
+    setCameraAnalyzing(false);
+    setCameraPredictions([]);
+    setCameraFaces(0);
+    setFps(0);
   };
 
-  const overallResult = getOverallResult();
-  const averageConfidence = getAverageConfidence();
+
+  // =====================================================
+  // CAMERA FRAME LOOP
+  // =====================================================
+
+  const startFrameLoop = () => {
+
+    const processFrame = async () => {
+
+      if (!streamRef.current) {
+        return;
+      }
+
+
+      // Prevent multiple requests at once
+      if (frameBusyRef.current) {
+
+        cameraTimerRef.current =
+          setTimeout(
+            processFrame,
+            150
+          );
+
+        return;
+      }
+
+
+      const video =
+        videoRef.current;
+
+      const canvas =
+        canvasRef.current;
+
+
+      if (
+        !video ||
+        !canvas ||
+        video.readyState < 2 ||
+        video.videoWidth === 0
+      ) {
+
+        cameraTimerRef.current =
+          setTimeout(
+            processFrame,
+            200
+          );
+
+        return;
+      }
+
+
+      frameBusyRef.current = true;
+      setCameraAnalyzing(true);
+
+
+      try {
+
+        const width =
+          video.videoWidth;
+
+        const height =
+          video.videoHeight;
+
+
+        canvas.width = width;
+        canvas.height = height;
+
+
+        const context =
+          canvas.getContext("2d");
+
+
+        context.drawImage(
+          video,
+          0,
+          0,
+          width,
+          height
+        );
+
+
+        const blob =
+          await new Promise(
+            (resolve) =>
+              canvas.toBlob(
+                resolve,
+                "image/jpeg",
+                0.65
+              )
+          );
+
+
+        if (!blob) {
+          throw new Error(
+            "Could not capture camera frame."
+          );
+        }
+
+
+        const formData =
+          new FormData();
+
+
+        formData.append(
+          "file",
+          blob,
+          "camera-frame.jpg"
+        );
+
+
+        const startTime =
+          performance.now();
+
+
+        const response =
+          await fetch(
+            "http://127.0.0.1:8000/predict-frame",
+            {
+              method: "POST",
+              body: formData,
+            }
+          );
+
+
+        const data =
+          await response.json();
+
+
+        if (!response.ok) {
+
+          throw new Error(
+            data.detail ||
+            "Camera analysis failed."
+          );
+        }
+
+
+        setCameraPredictions(
+          data.predictions || []
+        );
+
+        setCameraFaces(
+          data.faces_detected || 0
+        );
+
+
+        // ------------------------------------------------
+        // FPS
+        // ------------------------------------------------
+
+        const endTime =
+          performance.now();
+
+        const processingTime =
+          endTime - startTime;
+
+
+        if (processingTime > 0) {
+
+          const currentFps =
+            Math.min(
+              30,
+              Math.round(
+                1000 /
+                processingTime
+              )
+            );
+
+          setFps(currentFps);
+        }
+
+
+      } catch (err) {
+
+        console.error(
+          "Camera analysis error:",
+          err
+        );
+
+        setCameraError(
+          err.message ||
+          "Camera analysis failed."
+        );
+
+      } finally {
+
+        frameBusyRef.current = false;
+        setCameraAnalyzing(false);
+
+
+        // About 4-5 analysis requests/sec maximum
+        if (streamRef.current) {
+
+          cameraTimerRef.current =
+            setTimeout(
+              processFrame,
+              180
+            );
+        }
+      }
+    };
+
+
+    processFrame();
+  };
+
+
+  // =====================================================
+  // RENDER
+  // =====================================================
 
   return (
+
     <div className="app">
 
       {/* =================================================
@@ -197,15 +599,20 @@ function App() {
           FakeShield
         </div>
 
+
         <div className="status">
+
           <span className="status-dot"></span>
+
           Backend Online
+
         </div>
 
       </header>
 
 
       <main className="main-content">
+
 
         {/* =================================================
             HERO
@@ -215,24 +622,28 @@ function App() {
 
           <h1>
             AI-Powered
-            <span>Deepfake Detection</span>
+            <span>
+              Deepfake Detection
+            </span>
           </h1>
 
+
           <p>
-            Upload an image and let FakeShield
-            analyze the detected face using AI.
+            Upload an image or use your camera
+            to detect deepfakes using AI.
           </p>
 
         </section>
 
 
         {/* =================================================
-            UPLOAD CARD
+            IMAGE UPLOAD
             ================================================= */}
 
         <section className="upload-card">
 
           <div className="upload-area">
+
 
             {preview ? (
 
@@ -244,11 +655,13 @@ function App() {
                   className="preview-image"
                 />
 
-                {/* Remove button */}
+
                 <button
                   type="button"
                   className="remove-image-button"
-                  onClick={handleRemoveImage}
+                  onClick={
+                    handleRemoveImage
+                  }
                   aria-label="Remove image"
                   title="Remove image"
                 >
@@ -265,13 +678,15 @@ function App() {
                   +
                 </div>
 
+
                 <h2>
                   Upload an image
                 </h2>
 
+
                 <p>
-                  Select an image containing a face
-                  to analyze.
+                  Select an image containing
+                  a face to analyze.
                 </p>
 
               </>
@@ -302,10 +717,6 @@ function App() {
           </div>
 
 
-          {/* =================================================
-              ANALYZE BUTTON
-              ================================================= */}
-
           {selectedFile && (
 
             <button
@@ -314,51 +725,19 @@ function App() {
               disabled={loading}
             >
 
-              {loading ? (
-
-                <span className="analyzing-content">
-
-                  <span className="loading-spinner"></span>
-
-                  <span>
-                    Analyzing Image...
-                  </span>
-
-                </span>
-
-              ) : (
-
-                "Analyze Image"
-
-              )}
+              {loading
+                ? "Analyzing..."
+                : "Analyze Image"}
 
             </button>
 
           )}
 
 
-          {/* =================================================
-              ERROR
-              ================================================= */}
-
           {error && (
 
             <div className="error-box">
-
-              <div className="error-icon">
-                !
-              </div>
-
-              <div>
-                <strong>
-                  Analysis Error
-                </strong>
-
-                <p>
-                  {error}
-                </p>
-              </div>
-
+              {error}
             </div>
 
           )}
@@ -367,262 +746,183 @@ function App() {
 
 
         {/* =================================================
-            ANALYZING STATE
+            CAMERA SECTION
             ================================================= */}
 
-        {loading && (
+        <section
+          className="upload-card"
+          style={{
+            marginTop: "28px"
+          }}
+        >
 
-          <section className="scanning-card">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "20px",
+              marginBottom: "20px",
+              flexWrap: "wrap"
+            }}
+          >
 
-            <div className="scanner-icon">
+            <div>
 
-              <span></span>
-
-            </div>
-
-            <div className="scanning-text">
-
-              <h2>
-                AI is analyzing the image
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: "26px",
+                  fontWeight: 800
+                }}
+              >
+                Live Camera Detection
               </h2>
 
-              <p>
-                Detecting faces and checking
-                for manipulation...
+              <p
+                style={{
+                  marginTop: "8px",
+                  color: "#8290aa",
+                  fontSize: "14px"
+                }}
+              >
+                Detect multiple faces in real time.
               </p>
 
             </div>
 
-            <div className="scan-progress">
 
-              <div className="scan-progress-bar"></div>
-
-            </div>
-
-          </section>
-
-        )}
-
-
-        {/* =================================================
-            RESULT
-            ================================================= */}
-
-        {result && !loading && (
-
-          <section className="result-card">
-
-            {/* Result header */}
-
-            <div className="result-header">
-
-              <div>
-
-                <span className="result-label">
-                  ANALYSIS COMPLETE
-                </span>
-
-                <h2>
-                  Analysis Result
-                </h2>
-
-              </div>
+            {cameraActive && (
 
               <div
-                className={`overall-badge ${
-                  overallResult === "FAKE"
-                    ? "badge-fake"
-                    : overallResult === "REAL"
-                    ? "badge-real"
-                    : "badge-neutral"
-                }`}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px"
+                }}
               >
-                {overallResult || "NO FACE"}
+
+                <span
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "7px",
+                    color: "#35e890",
+                    fontSize: "13px",
+                    fontWeight: 700
+                  }}
+                >
+
+                  <span
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      borderRadius: "50%",
+                      background: "#35e890",
+                      boxShadow:
+                        "0 0 12px rgba(53,232,144,.8)"
+                    }}
+                  />
+
+                  CAMERA LIVE
+
+                </span>
+
+
+                <span
+                  style={{
+                    color: "#9aa8c2",
+                    fontSize: "13px",
+                    fontWeight: 700
+                  }}
+                >
+                  {fps} FPS
+                </span>
+
               </div>
 
-            </div>
+            )}
+
+          </div>
 
 
-            {/* =================================================
-                SUMMARY
-                ================================================= */}
+          {/* CAMERA VIEW */}
 
-            {result.faces_detected > 0 ? (
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              aspectRatio: "16 / 9",
+              minHeight: "300px",
+              overflow: "hidden",
+              borderRadius: "22px",
+              background:
+                "rgba(4,8,18,.9)",
+              border:
+                "1px solid rgba(120,155,220,.16)"
+            }}
+          >
 
-              <>
-
-                <div className="result-summary">
-
-                  <div className="summary-card">
-
-                    <span>
-                      Faces Detected
-                    </span>
-
-                    <strong>
-                      {result.faces_detected}
-                    </strong>
-
-                  </div>
-
-
-                  <div className="summary-card">
-
-                    <span>
-                      Average Confidence
-                    </span>
-
-                    <strong>
-                      {averageConfidence}%
-                    </strong>
-
-                  </div>
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                display:
+                  cameraActive
+                    ? "block"
+                    : "none",
+                transform: "scaleX(-1)"
+              }}
+            />
 
 
-                  <div className="summary-card">
+            {!cameraActive && (
 
-                    <span>
-                      Faces Flagged
-                    </span>
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  textAlign: "center",
+                  padding: "30px"
+                }}
+              >
 
-                    <strong className="flagged-number">
-                      {
-                        result.predictions
-                          ? result.predictions.filter(
-                              (prediction) =>
-                                prediction.result === "FAKE"
-                            ).length
-                          : 0
-                      }
-                    </strong>
-
-                  </div>
-
+                <div
+                  style={{
+                    fontSize: "48px",
+                    marginBottom: "14px"
+                  }}
+                >
+                  ◉
                 </div>
 
 
-                {/* =================================================
-                    FACE RESULTS
-                    ================================================= */}
-
-                <div className="face-results">
-
-                  <div className="face-results-title">
-                    Face-by-Face Analysis
-                  </div>
-
-                  {result.predictions &&
-                    result.predictions.map(
-                      (prediction, index) => {
-
-                        const isFake =
-                          prediction.result === "FAKE";
-
-                        return (
-
-                          <div
-                            className="face-result"
-                            key={index}
-                          >
-
-                            {/* Face number */}
-
-                            <div className="face-number">
-                              {index + 1}
-                            </div>
-
-
-                            {/* Result */}
-
-                            <div className="face-result-main">
-
-                              <span className="face-result-label">
-                                Face {index + 1}
-                              </span>
-
-                              <strong
-                                className={
-                                  isFake
-                                    ? "fake"
-                                    : "real"
-                                }
-                              >
-                                {prediction.result}
-                              </strong>
-
-                            </div>
-
-
-                            {/* Confidence */}
-
-                            <div className="face-confidence">
-
-                              <div className="confidence-top">
-
-                                <span>
-                                  Confidence
-                                </span>
-
-                                <strong>
-                                  {prediction.confidence}%
-                                </strong>
-
-                              </div>
-
-                              <div className="confidence-bar">
-
-                                <div
-                                  className={
-                                    `confidence-fill ${
-                                      isFake
-                                        ? "confidence-fake"
-                                        : "confidence-real"
-                                    }`
-                                  }
-                                  style={{
-                                    width: `${Math.min(
-                                      Number(
-                                        prediction.confidence
-                                      ) || 0,
-                                      100
-                                    )}%`,
-                                  }}
-                                ></div>
-
-                              </div>
-
-                            </div>
-
-                          </div>
-
-                        );
-                      }
-                    )}
-
-                </div>
-
-              </>
-
-            ) : (
-
-              /* =================================================
-                 NO FACE
-                 ================================================= */
-
-              <div className="no-face-state">
-
-                <div className="no-face-icon">
-                  ?
-                </div>
-
-                <h3>
-                  No Face Detected
+                <h3
+                  style={{
+                    fontSize: "20px",
+                    marginBottom: "8px"
+                  }}
+                >
+                  Camera is ready
                 </h3>
 
-                <p>
-                  FakeShield couldn't find a detectable
-                  face in this image. Try uploading a
-                  clearer image where the face is visible.
+
+                <p
+                  style={{
+                    color: "#8290aa",
+                    fontSize: "14px"
+                  }}
+                >
+                  Start your camera to begin
+                  real-time detection.
                 </p>
 
               </div>
@@ -630,9 +930,348 @@ function App() {
             )}
 
 
-            {/* Backend message */}
+            {/* FACE BOXES */}
 
-            {result.message && result.faces_detected > 0 && (
+            {cameraActive &&
+              cameraPredictions.map(
+                (prediction, index) => {
+
+                  const box =
+                    prediction.bounding_box;
+
+                  if (!box) return null;
+
+
+                  const video =
+                    videoRef.current;
+
+
+                  if (!video) return null;
+
+
+                  const videoWidth =
+                    video.videoWidth || 640;
+
+                  const videoHeight =
+                    video.videoHeight || 480;
+
+
+                  const left =
+                    (box.x / videoWidth) *
+                    100;
+
+                  const top =
+                    (box.y / videoHeight) *
+                    100;
+
+                  const width =
+                    (box.width / videoWidth) *
+                    100;
+
+                  const height =
+                    (box.height / videoHeight) *
+                    100;
+
+
+                  const isFake =
+                    prediction.result ===
+                    "FAKE";
+
+
+                  return (
+
+                    <div
+                      key={`${prediction.face}-${index}`}
+                      style={{
+                        position: "absolute",
+
+                        left: `${100 - left - width}%`,
+                        top: `${top}%`,
+
+                        width: `${width}%`,
+                        height: `${height}%`,
+
+                        border:
+                          `2px solid ${
+                            isFake
+                              ? "#ff5470"
+                              : "#35e890"
+                          }`,
+
+                        borderRadius: "10px",
+
+                        boxShadow:
+                          isFake
+                            ? "0 0 18px rgba(255,84,112,.45)"
+                            : "0 0 18px rgba(53,232,144,.35)",
+
+                        pointerEvents: "none"
+                      }}
+                    >
+
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "-34px",
+                          left: "0",
+
+                          padding:
+                            "6px 10px",
+
+                          borderRadius:
+                            "8px",
+
+                          background:
+                            isFake
+                              ? "rgba(255,84,112,.92)"
+                              : "rgba(53,232,144,.92)",
+
+                          color: "#04100a",
+
+                          fontSize: "12px",
+                          fontWeight: 800,
+
+                          whiteSpace: "nowrap"
+                        }}
+                      >
+
+                        Face {prediction.face}
+                        {" · "}
+                        {prediction.result}
+                        {" · "}
+                        {prediction.confidence}%
+
+                      </div>
+
+                    </div>
+
+                  );
+                }
+              )}
+
+          </div>
+
+
+          {/* CAMERA CONTROLS */}
+
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              marginTop: "18px",
+              flexWrap: "wrap"
+            }}
+          >
+
+            {!cameraActive ? (
+
+              <button
+                type="button"
+                className="analyze-button"
+                style={{
+                  marginTop: 0,
+                  flex: 1
+                }}
+                onClick={startCamera}
+              >
+                Start Camera
+              </button>
+
+            ) : (
+
+              <button
+                type="button"
+                className="analyze-button"
+                style={{
+                  marginTop: 0,
+                  flex: 1,
+                  background:
+                    "linear-gradient(100deg,#ff405f,#ff687d)"
+                }}
+                onClick={stopCamera}
+              >
+                Stop Camera
+              </button>
+
+            )}
+
+          </div>
+
+
+          {/* CAMERA STATUS */}
+
+          {cameraActive && (
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit,minmax(150px,1fr))",
+                gap: "12px",
+                marginTop: "16px"
+              }}
+            >
+
+              <div
+                className="result-item"
+                style={{
+                  minHeight: "70px"
+                }}
+              >
+
+                <div>
+
+                  <span>
+                    Faces Detected
+                  </span>
+
+                  <strong>
+                    {cameraFaces}
+                  </strong>
+
+                </div>
+
+              </div>
+
+
+              <div
+                className="result-item"
+                style={{
+                  minHeight: "70px"
+                }}
+              >
+
+                <div>
+
+                  <span>
+                    Analysis
+                  </span>
+
+                  <strong
+                    style={{
+                      color:
+                        cameraAnalyzing
+                          ? "#68a7ff"
+                          : "#35e890"
+                    }}
+                  >
+                    {cameraAnalyzing
+                      ? "Scanning"
+                      : "Ready"}
+                  </strong>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )}
+
+
+          {cameraError && (
+
+            <div className="error-box">
+              {cameraError}
+            </div>
+
+          )}
+
+
+          {/* Hidden canvas used to capture frames */}
+
+          <canvas
+            ref={canvasRef}
+            style={{
+              display: "none"
+            }}
+          />
+
+        </section>
+
+
+        {/* =================================================
+            IMAGE RESULT
+            ================================================= */}
+
+        {result && (
+
+          <section className="result-card">
+
+            <h2>
+              Analysis Result
+            </h2>
+
+
+            <div className="result-info">
+
+              <div className="result-item">
+
+                <div>
+
+                  <span>
+                    Faces Detected
+                  </span>
+
+                  <strong>
+                    {result.faces_detected}
+                  </strong>
+
+                </div>
+
+              </div>
+
+
+              {result.predictions &&
+                result.predictions.map(
+                  (prediction, index) => (
+
+                    <div
+                      className="prediction"
+                      key={index}
+                    >
+
+                      <div>
+
+                        <span>
+                          Face {prediction.face || index + 1}
+                        </span>
+
+                        <strong
+                          className={
+                            prediction.result ===
+                            "FAKE"
+                              ? "fake"
+                              : "real"
+                          }
+                        >
+                          {prediction.result}
+                        </strong>
+
+                      </div>
+
+
+                      <div>
+
+                        <span>
+                          Confidence
+                        </span>
+
+                        <strong>
+                          {prediction.confidence}%
+                        </strong>
+
+                      </div>
+
+                    </div>
+
+                  )
+                )}
+
+            </div>
+
+
+            {result.message && (
 
               <p className="result-message">
                 {result.message}
