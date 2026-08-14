@@ -390,9 +390,9 @@ def analyze_frame(frame, allow_fallback=False):
             for cascade in haar_cascades:
                 haar_faces = cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.1,
-                    minNeighbors=4,
-                    minSize=(30, 30)
+                    scaleFactor=1.15,
+                    minNeighbors=6,
+                    minSize=(50, 50)
                 )
                 if len(haar_faces) > 0:
                     for (hx, hy, hw, hh) in haar_faces:
@@ -515,7 +515,11 @@ def analyze_frame(frame, allow_fallback=False):
 
                     "width": x2 - x1,
 
-                    "height": y2 - y1
+                    "height": y2 - y1,
+
+                    "frame_width": frame_width,
+
+                    "frame_height": frame_height
 
                 }
 
@@ -567,7 +571,9 @@ def analyze_frame(frame, allow_fallback=False):
                     "x": 0,
                     "y": 0,
                     "width": frame_width,
-                    "height": frame_height
+                    "height": frame_height,
+                    "frame_width": frame_width,
+                    "frame_height": frame_height
                 }
             })
         except Exception as full_err:

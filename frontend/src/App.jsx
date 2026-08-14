@@ -580,10 +580,10 @@ function App() {
       }
 
       // -------------------------------------------------
-      // PIPELINE IN-FLIGHT LIMIT (Allows up to 2 concurrent requests)
+      // PIPELINE IN-FLIGHT LIMIT (Allows up to 3 concurrent requests)
       // -------------------------------------------------
 
-      if (inFlightRef.current >= 2) {
+      if (inFlightRef.current >= 3) {
         cameraTimerRef.current =
           setTimeout(
             processFrame,
@@ -609,7 +609,7 @@ function App() {
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            100
+            50
           );
 
         return;
@@ -619,11 +619,11 @@ function App() {
 
       setCameraAnalyzing(true);
 
-      // Immediately schedule next frame loop so pipeline runs at 15 FPS
+      // Schedule next frame loop for 14-15 FPS
       cameraTimerRef.current =
         setTimeout(
           processFrame,
-          40
+          20
         );
 
       let requestSucceeded = false;
@@ -1355,32 +1355,35 @@ function App() {
                       return null;
                     }
 
-                    const videoWidth =
+                    // Use the frame dimensions sent by backend to ensure exact positioning
+                    const boxFrameW =
+                      box.frame_width ||
                       video.videoWidth ||
                       640;
 
-                    const videoHeight =
+                    const boxFrameH =
+                      box.frame_height ||
                       video.videoHeight ||
                       480;
 
                     const left =
                       (box.x /
-                        videoWidth) *
+                        boxFrameW) *
                       100;
 
                     const top =
                       (box.y /
-                        videoHeight) *
+                        boxFrameH) *
                       100;
 
                     const width =
                       (box.width /
-                        videoWidth) *
+                        boxFrameW) *
                       100;
 
                     const height =
                       (box.height /
-                        videoHeight) *
+                        boxFrameH) *
                       100;
 
                     const isFake =
@@ -1390,13 +1393,9 @@ function App() {
                       "FAKE";
 
                     /*
-                     * Camera is normally displayed
-                     * like a selfie mirror.
-                     *
-                     * Therefore horizontal
-                     * coordinate is mirrored.
+                     * Camera is displayed as selfie mirror,
+                     * so horizontal coordinate is mirrored.
                      */
-
                     const mirroredLeft =
                       100 -
                       left -
