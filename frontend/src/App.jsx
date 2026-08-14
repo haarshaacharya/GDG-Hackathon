@@ -41,7 +41,7 @@ function App() {
   const streamRef = useRef(null);
 
   const cameraTimerRef = useRef(null);
-  const frameBusyRef = useRef(false);
+  const inFlightRef = useRef(0);
 
   // Abort current AI request when camera stops
   const cameraAbortRef = useRef(null);
@@ -52,8 +52,8 @@ function App() {
   // Actual AI analysis FPS tracking
   const analysisTimesRef = useRef([]);
 
-  // Target AI analysis rate (~15 FPS)
-  const AI_INTERVAL = 30;
+  // Target AI analysis rate
+  const AI_INTERVAL = 15;
 
   // =====================================================
   // RESTORE IMAGE AFTER REFRESH
@@ -355,7 +355,7 @@ function App() {
       videoRef.current.srcObject = null;
     }
 
-    frameBusyRef.current = false;
+    inFlightRef.current = 0;
 
     analysisTimesRef.current = [];
 
@@ -580,14 +580,14 @@ function App() {
       }
 
       // -------------------------------------------------
-      // PREVENT OVERLAPPING REQUESTS
+      // PIPELINE IN-FLIGHT LIMIT (Allows up to 2 concurrent requests)
       // -------------------------------------------------
 
-      if (frameBusyRef.current) {
+      if (inFlightRef.current >= 2) {
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            AI_INTERVAL
+            25
           );
 
         return;
@@ -609,15 +609,22 @@ function App() {
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            150
+            100
           );
 
         return;
       }
 
-      frameBusyRef.current = true;
+      inFlightRef.current += 1;
 
       setCameraAnalyzing(true);
+
+      // Immediately schedule next frame loop so pipeline runs at 15 FPS
+      cameraTimerRef.current =
+        setTimeout(
+          processFrame,
+          65
+        );
 
       let requestSucceeded = false;
 
@@ -633,13 +640,10 @@ function App() {
           video.videoHeight;
 
         // ------------------------------------------------
-        // LIMIT BACKEND IMAGE SIZE
+        // LIMIT BACKEND IMAGE SIZE FOR MAXIMUM THROUGHPUT
         // ------------------------------------------------
-        // This is important for performance.
-        // We don't need to send huge frames.
-        // The backend already resizes each face to 224x224.
 
-        const maxWidth = 480;
+        const maxWidth = 360;
 
         let captureWidth = width;
         let captureHeight = height;
@@ -684,7 +688,7 @@ function App() {
         );
 
         // ------------------------------------------------
-        // JPEG
+        // JPEG (High compression for instant transmission)
         // ------------------------------------------------
 
         const blob =
@@ -693,7 +697,7 @@ function App() {
               canvas.toBlob(
                 resolve,
                 "image/jpeg",
-                0.50
+                0.40
               )
           );
 
@@ -817,8 +821,11 @@ function App() {
             null;
         }
 
-        frameBusyRef.current =
-          false;
+        inFlightRef.current =
+          Math.max(
+            0,
+            inFlightRef.current - 1
+          );
 
         if (
           sessionId ===
@@ -826,26 +833,8 @@ function App() {
           streamRef.current
         ) {
           setCameraAnalyzing(
-            false
+            inFlightRef.current > 0
           );
-
-          // ------------------------------------------------
-          // NEXT AI FRAME
-          // ------------------------------------------------
-          //
-          // Camera itself stays smooth.
-          // Backend analysis runs at controlled rate.
-
-          const nextDelay =
-            requestSucceeded
-              ? AI_INTERVAL
-              : 500;
-
-          cameraTimerRef.current =
-            setTimeout(
-              processFrame,
-              nextDelay
-            );
         }
       }
     };

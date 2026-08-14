@@ -87,7 +87,7 @@ face_detector_options = vision.FaceDetectorOptions(
 
     running_mode=vision.RunningMode.IMAGE,
 
-    min_detection_confidence=0.20
+    min_detection_confidence=0.10
 )
 
 
@@ -95,14 +95,20 @@ face_detector = vision.FaceDetector.create_from_options(
     face_detector_options
 )
 
-# Secondary Haar cascade detector as fallback
-haar_face_cascade = None
-try:
-    haar_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    if os.path.exists(haar_path):
-        haar_face_cascade = cv2.CascadeClassifier(haar_path)
-except Exception as haar_init_err:
-    print("Could not load Haar cascade fallback:", haar_init_err)
+# Secondary Haar cascade detectors as fallback
+haar_cascades = []
+for cascade_name in [
+    "haarcascade_frontalface_default.xml",
+    "haarcascade_frontalface_alt2.xml",
+    "haarcascade_frontalface_alt.xml",
+    "haarcascade_profileface.xml",
+]:
+    try:
+        cascade_file = cv2.data.haarcascades + cascade_name
+        if os.path.exists(cascade_file):
+            haar_cascades.append(cv2.CascadeClassifier(cascade_file))
+    except Exception as cascade_err:
+        print(f"Error loading cascade {cascade_name}:", cascade_err)
 
 
 # =========================================================
@@ -334,17 +340,20 @@ def analyze_frame(frame, allow_fallback=False):
     # 2. Haar Cascade fallback if MediaPipe found no faces
     # -----------------------------------------------------
 
-    if not boxes and haar_face_cascade is not None:
+    if not boxes and haar_cascades:
         try:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            haar_faces = haar_face_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.1,
-                minNeighbors=3,
-                minSize=(20, 20)
-            )
-            for (hx, hy, hw, hh) in haar_faces:
-                boxes.append((int(hx), int(hy), int(hw), int(hh)))
+            for cascade in haar_cascades:
+                haar_faces = cascade.detectMultiScale(
+                    gray,
+                    scaleFactor=1.08,
+                    minNeighbors=2,
+                    minSize=(16, 16)
+                )
+                if len(haar_faces) > 0:
+                    for (hx, hy, hw, hh) in haar_faces:
+                        boxes.append((int(hx), int(hy), int(hw), int(hh)))
+                    break
         except Exception as haar_err:
             print("Haar cascade fallback error:", haar_err)
 
