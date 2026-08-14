@@ -36,7 +36,6 @@ function App() {
   const streamRef = useRef(null);
 
   const cameraTimerRef = useRef(null);
-  const lastFrameTimeRef = useRef(0);
   const frameBusyRef = useRef(false);
 
 
@@ -62,7 +61,6 @@ function App() {
 
       fetch(savedImage)
         .then((response) => response.blob())
-
         .then((blob) => {
 
           const file = new File(
@@ -79,7 +77,6 @@ function App() {
           setSelectedFile(file);
 
         })
-
         .catch(() => {
 
           setError(
@@ -87,6 +84,7 @@ function App() {
           );
 
         });
+
     }
 
   }, []);
@@ -99,7 +97,19 @@ function App() {
   useEffect(() => {
 
     return () => {
-      stopCamera();
+
+      if (cameraTimerRef.current) {
+        clearTimeout(cameraTimerRef.current);
+      }
+
+      if (streamRef.current) {
+
+        streamRef.current
+          .getTracks()
+          .forEach((track) => track.stop());
+
+      }
+
     };
 
   }, []);
@@ -149,6 +159,7 @@ function App() {
         "fakeshield_type",
         file.type
       );
+
     };
 
 
@@ -160,6 +171,7 @@ function App() {
 
     // Same image can be selected again
     event.target.value = "";
+
   };
 
 
@@ -185,6 +197,7 @@ function App() {
     localStorage.removeItem(
       "fakeshield_type"
     );
+
   };
 
 
@@ -238,6 +251,7 @@ function App() {
           data.detail ||
           "Something went wrong."
         );
+
       }
 
 
@@ -255,7 +269,89 @@ function App() {
       setLoading(false);
 
     }
+
   };
+
+
+  // =====================================================
+  // RESULT HELPERS
+  // =====================================================
+
+  const getImageStats = () => {
+
+    if (
+      !result ||
+      !result.predictions ||
+      result.predictions.length === 0
+    ) {
+
+      return {
+        overallResult: "UNKNOWN",
+        averageConfidence: 0,
+        flaggedFaces: 0,
+      };
+
+    }
+
+
+    const predictions =
+      result.predictions;
+
+
+    const totalConfidence =
+      predictions.reduce(
+        (total, prediction) =>
+          total +
+          Number(prediction.confidence || 0),
+        0
+      );
+
+
+    const averageConfidence =
+      totalConfidence /
+      predictions.length;
+
+
+    const flaggedFaces =
+      predictions.filter(
+        (prediction) =>
+          String(prediction.result).toUpperCase() ===
+          "FAKE"
+      ).length;
+
+
+    const realFaces =
+      predictions.filter(
+        (prediction) =>
+          String(prediction.result).toUpperCase() ===
+          "REAL"
+      ).length;
+
+
+    let overallResult = "UNKNOWN";
+
+
+    if (flaggedFaces > 0) {
+
+      overallResult = "FAKE";
+
+    } else if (realFaces > 0) {
+
+      overallResult = "REAL";
+
+    }
+
+
+    return {
+      overallResult,
+      averageConfidence,
+      flaggedFaces,
+    };
+
+  };
+
+
+  const imageStats = getImageStats();
 
 
   // =====================================================
@@ -280,21 +376,27 @@ function App() {
         throw new Error(
           "Camera is not supported by this browser."
         );
+
       }
 
 
       const stream =
         await navigator.mediaDevices.getUserMedia({
+
           video: {
             facingMode: "user",
+
             width: {
               ideal: 640
             },
+
             height: {
               ideal: 480
             }
           },
+
           audio: false
+
         });
 
 
@@ -307,12 +409,12 @@ function App() {
           stream;
 
         await videoRef.current.play();
+
       }
 
 
       setCameraActive(true);
 
-      // Start frame analysis
       startFrameLoop();
 
     } catch (err) {
@@ -325,7 +427,9 @@ function App() {
       );
 
       setCameraActive(false);
+
     }
+
   };
 
 
@@ -335,7 +439,6 @@ function App() {
 
   const stopCamera = () => {
 
-    // Stop timer
     if (cameraTimerRef.current) {
 
       clearTimeout(
@@ -343,10 +446,10 @@ function App() {
       );
 
       cameraTimerRef.current = null;
+
     }
 
 
-    // Stop camera stream
     if (streamRef.current) {
 
       streamRef.current
@@ -356,12 +459,14 @@ function App() {
         });
 
       streamRef.current = null;
+
     }
 
 
     if (videoRef.current) {
 
       videoRef.current.srcObject = null;
+
     }
 
 
@@ -372,6 +477,7 @@ function App() {
     setCameraPredictions([]);
     setCameraFaces(0);
     setFps(0);
+
   };
 
 
@@ -388,7 +494,6 @@ function App() {
       }
 
 
-      // Prevent multiple requests at once
       if (frameBusyRef.current) {
 
         cameraTimerRef.current =
@@ -398,6 +503,7 @@ function App() {
           );
 
         return;
+
       }
 
 
@@ -422,6 +528,7 @@ function App() {
           );
 
         return;
+
       }
 
 
@@ -467,9 +574,11 @@ function App() {
 
 
         if (!blob) {
+
           throw new Error(
             "Could not capture camera frame."
           );
+
         }
 
 
@@ -508,6 +617,7 @@ function App() {
             data.detail ||
             "Camera analysis failed."
           );
+
         }
 
 
@@ -515,17 +625,19 @@ function App() {
           data.predictions || []
         );
 
+
         setCameraFaces(
           data.faces_detected || 0
         );
 
 
-        // ------------------------------------------------
+        // =================================================
         // FPS
-        // ------------------------------------------------
+        // =================================================
 
         const endTime =
           performance.now();
+
 
         const processingTime =
           endTime - startTime;
@@ -542,7 +654,9 @@ function App() {
               )
             );
 
+
           setFps(currentFps);
+
         }
 
 
@@ -552,6 +666,7 @@ function App() {
           "Camera analysis error:",
           err
         );
+
 
         setCameraError(
           err.message ||
@@ -564,7 +679,6 @@ function App() {
         setCameraAnalyzing(false);
 
 
-        // About 4-5 analysis requests/sec maximum
         if (streamRef.current) {
 
           cameraTimerRef.current =
@@ -572,12 +686,16 @@ function App() {
               processFrame,
               180
             );
+
         }
+
       }
+
     };
 
 
     processFrame();
+
   };
 
 
@@ -588,6 +706,7 @@ function App() {
   return (
 
     <div className="app">
+
 
       {/* =================================================
           NAVBAR
@@ -621,10 +740,13 @@ function App() {
         <section className="hero">
 
           <h1>
+
             AI-Powered
+
             <span>
               Deepfake Detection
             </span>
+
           </h1>
 
 
@@ -659,9 +781,7 @@ function App() {
                 <button
                   type="button"
                   className="remove-image-button"
-                  onClick={
-                    handleRemoveImage
-                  }
+                  onClick={handleRemoveImage}
                   aria-label="Remove image"
                   title="Remove image"
                 >
@@ -778,6 +898,7 @@ function App() {
               >
                 Live Camera Detection
               </h2>
+
 
               <p
                 style={{
@@ -945,7 +1066,6 @@ function App() {
                   const video =
                     videoRef.current;
 
-
                   if (!video) return null;
 
 
@@ -974,7 +1094,8 @@ function App() {
 
 
                   const isFake =
-                    prediction.result ===
+                    String(prediction.result)
+                      .toUpperCase() ===
                     "FAKE";
 
 
@@ -985,11 +1106,17 @@ function App() {
                       style={{
                         position: "absolute",
 
-                        left: `${100 - left - width}%`,
-                        top: `${top}%`,
+                        left:
+                          `${100 - left - width}%`,
 
-                        width: `${width}%`,
-                        height: `${height}%`,
+                        top:
+                          `${top}%`,
+
+                        width:
+                          `${width}%`,
+
+                        height:
+                          `${height}%`,
 
                         border:
                           `2px solid ${
@@ -1046,6 +1173,7 @@ function App() {
                     </div>
 
                   );
+
                 }
               )}
 
@@ -1178,8 +1306,6 @@ function App() {
           )}
 
 
-          {/* Hidden canvas used to capture frames */}
-
           <canvas
             ref={canvasRef}
             style={{
@@ -1198,78 +1324,186 @@ function App() {
 
           <section className="result-card">
 
-            <h2>
-              Analysis Result
-            </h2>
 
+            {/* RESULT HEADER */}
 
-            <div className="result-info">
+            <div className="analysis-header">
 
-              <div className="result-item">
+              <div>
 
-                <div>
+                <span className="analysis-eyebrow">
+                  ANALYSIS COMPLETE
+                </span>
 
-                  <span>
-                    Faces Detected
-                  </span>
-
-                  <strong>
-                    {result.faces_detected}
-                  </strong>
-
-                </div>
+                <h2>
+                  Analysis Result
+                </h2>
 
               </div>
 
 
-              {result.predictions &&
-                result.predictions.map(
-                  (prediction, index) => (
-
-                    <div
-                      className="prediction"
-                      key={index}
-                    >
-
-                      <div>
-
-                        <span>
-                          Face {prediction.face || index + 1}
-                        </span>
-
-                        <strong
-                          className={
-                            prediction.result ===
-                            "FAKE"
-                              ? "fake"
-                              : "real"
-                          }
-                        >
-                          {prediction.result}
-                        </strong>
-
-                      </div>
-
-
-                      <div>
-
-                        <span>
-                          Confidence
-                        </span>
-
-                        <strong>
-                          {prediction.confidence}%
-                        </strong>
-
-                      </div>
-
-                    </div>
-
-                  )
-                )}
+              <div
+                className={`overall-result ${
+                  imageStats.overallResult === "FAKE"
+                    ? "fake"
+                    : imageStats.overallResult === "REAL"
+                      ? "real"
+                      : ""
+                }`}
+              >
+                {imageStats.overallResult}
+              </div>
 
             </div>
 
+
+            {/* SUMMARY */}
+
+            <div className="analysis-summary">
+
+
+              <div className="summary-card">
+
+                <span>
+                  FACES DETECTED
+                </span>
+
+                <strong>
+                  {result.faces_detected || 0}
+                </strong>
+
+              </div>
+
+
+              <div className="summary-card">
+
+                <span>
+                  AVERAGE CONFIDENCE
+                </span>
+
+                <strong>
+                  {imageStats.averageConfidence.toFixed(2)}%
+                </strong>
+
+              </div>
+
+
+              <div className="summary-card">
+
+                <span>
+                  FACES FLAGGED
+                </span>
+
+                <strong
+                  className={
+                    imageStats.flaggedFaces > 0
+                      ? "fake"
+                      : "real"
+                  }
+                >
+                  {imageStats.flaggedFaces}
+                </strong>
+
+              </div>
+
+
+            </div>
+
+
+            {/* FACE BY FACE */}
+
+            <div className="face-analysis">
+
+              <div className="face-analysis-title">
+
+                <div>
+
+                  <span>
+                    FACE-BY-FACE ANALYSIS
+                  </span>
+
+                  <h3>
+                    Detected Faces
+                  </h3>
+
+                </div>
+
+                <span className="face-count">
+                  {result.predictions?.length || 0} Faces
+                </span>
+
+              </div>
+
+
+              <div className="face-list">
+
+                {result.predictions &&
+                  result.predictions.map(
+                    (prediction, index) => {
+
+                      const isFake =
+                        String(prediction.result)
+                          .toUpperCase() ===
+                        "FAKE";
+
+
+                      return (
+
+                        <div
+                          className="face-result-card"
+                          key={`${prediction.face}-${index}`}
+                        >
+
+                          <div className="face-number">
+                            {prediction.face || index + 1}
+                          </div>
+
+
+                          <div className="face-result-main">
+
+                            <span className="face-label">
+                              Face {prediction.face || index + 1}
+                            </span>
+
+
+                            <strong
+                              className={
+                                isFake
+                                  ? "fake"
+                                  : "real"
+                              }
+                            >
+                              {prediction.result}
+                            </strong>
+
+                          </div>
+
+
+                          <div className="face-confidence">
+
+                            <span>
+                              CONFIDENCE
+                            </span>
+
+                            <strong>
+                              {prediction.confidence}%
+                            </strong>
+
+                          </div>
+
+                        </div>
+
+                      );
+
+                    }
+                  )}
+
+              </div>
+
+            </div>
+
+
+            {/* MESSAGE */}
 
             {result.message && (
 
@@ -1286,7 +1520,9 @@ function App() {
       </main>
 
     </div>
+
   );
+
 }
 
 export default App;

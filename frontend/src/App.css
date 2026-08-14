@@ -1684,3 +1684,274 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #3c5680;
 }
+/* =========================================================
+   STEP 4 — ANALYSIS RESULT STRUCTURE
+   ========================================================= */
+
+.analysis-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.analysis-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #aeb9d0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.analysis-header h2 {
+  margin: 0;
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -2.5px;
+}
+
+.overall-result {
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 900;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+
+/* =========================================================
+   SUMMARY CARDS
+   ========================================================= */
+
+.analysis-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.summary-card {
+  min-height: 105px;
+  padding: 20px 22px;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20,31,54,0.88),
+      rgba(9,15,29,0.9)
+    );
+
+  border: 1px solid rgba(120,155,220,0.14);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.summary-card span {
+  color: #8492ad;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  margin-bottom: 8px;
+}
+
+.summary-card strong {
+  color: #f5f7ff;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+
+/* =========================================================
+   FACE ANALYSIS
+   ========================================================= */
+
+.face-analysis {
+  padding-top: 8px;
+}
+
+.face-analysis-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.face-analysis-title > div > span {
+  color: #8492ad;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.face-analysis-title h3 {
+  margin-top: 5px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+}
+
+.face-count {
+  color: #8e9bb4;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   FACE LIST
+   ========================================================= */
+
+.face-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.face-result-card {
+  min-height: 82px;
+  padding: 16px 18px;
+
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 16px;
+
+  border-radius: 16px;
+
+  background:
+    rgba(9,16,30,0.78);
+
+  border: 1px solid rgba(120,155,220,0.13);
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.face-result-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(100,150,255,0.3);
+  background: rgba(12,21,39,0.9);
+}
+
+.face-number {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 12px;
+
+  color: #b9c6df;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(55,95,170,0.2),
+      rgba(50,70,130,0.08)
+    );
+
+  border: 1px solid rgba(120,155,220,0.15);
+
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.face-result-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.face-label {
+  color: #dfe5f3;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.face-result-main strong {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.face-confidence {
+  text-align: right;
+}
+
+.face-confidence span {
+  display: block;
+  margin-bottom: 5px;
+
+  color: #7787a3;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.face-confidence strong {
+  color: #f4f7ff;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+
+/* =========================================================
+   RESULT MESSAGE
+   ========================================================= */
+
+.result-message {
+  margin-top: 20px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  .analysis-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .analysis-header h2 {
+    font-size: 38px;
+  }
+
+  .analysis-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    min-height: 85px;
+  }
+
+  .face-analysis-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .face-result-card {
+    grid-template-columns: 42px 1fr;
+  }
+
+  .face-confidence {
+    grid-column: 2;
+    text-align: left;
+  }
+
+}

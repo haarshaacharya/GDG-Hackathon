@@ -12,6 +12,10 @@ from mediapipe.tasks.python import vision
 from app.services.deepfake_detector import predict_face
 
 
+# =========================================================
+# APP
+# =========================================================
+
 app = FastAPI(
     title="FakeShield API",
     description="AI-powered deepfake detection backend",
@@ -43,7 +47,7 @@ MODEL_PATH = "models/face_detector.tflite"
 
 
 # =========================================================
-# Shared MediaPipe detector
+# SHARED MEDIAPIPE DETECTOR
 # =========================================================
 
 base_options = python.BaseOptions(
@@ -60,12 +64,19 @@ face_detector = vision.FaceDetector.create_from_options(
     face_detector_options
 )
 
-# Prevent simultaneous access to the MediaPipe detector
+
+# =========================================================
+# DETECTOR LOCK
+# =========================================================
+
+# Prevent simultaneous access to the shared
+# MediaPipe detector.
+
 detector_lock = threading.Lock()
 
 
 # =========================================================
-# Helper: Analyze frame
+# HELPER: ANALYZE FRAME
 # =========================================================
 
 def analyze_frame(frame):
@@ -76,7 +87,10 @@ def analyze_frame(frame):
 
     frame_height, frame_width = frame.shape[:2]
 
+    # -----------------------------------------------------
     # BGR -> RGB
+    # -----------------------------------------------------
+
     rgb_frame = cv2.cvtColor(
         frame,
         cv2.COLOR_BGR2RGB
@@ -87,13 +101,24 @@ def analyze_frame(frame):
         data=rgb_frame
     )
 
-    # MediaPipe detection
+    # -----------------------------------------------------
+    # MediaPipe face detection
+    # -----------------------------------------------------
+
     with detector_lock:
-        result = face_detector.detect(mp_image)
+
+        result = face_detector.detect(
+            mp_image
+        )
 
     detections = result.detections or []
 
     predictions = []
+
+
+    # =====================================================
+    # PROCESS EVERY DETECTED FACE
+    # =====================================================
 
     for face_index, detection in enumerate(
         detections,
@@ -101,6 +126,7 @@ def analyze_frame(frame):
     ):
 
         bbox = detection.bounding_box
+
 
         # -------------------------------------------------
         # Bounding box
@@ -118,24 +144,40 @@ def analyze_frame(frame):
 
         x2 = min(
             frame_width,
-            int(bbox.origin_x + bbox.width)
+            int(
+                bbox.origin_x +
+                bbox.width
+            )
         )
 
         y2 = min(
             frame_height,
-            int(bbox.origin_y + bbox.height)
+            int(
+                bbox.origin_y +
+                bbox.height
+            )
         )
 
-        # Invalid box
+
+        # -------------------------------------------------
+        # Validate bounding box
+        # -------------------------------------------------
+
         if x2 <= x1 or y2 <= y1:
             continue
+
 
         face_width = x2 - x1
         face_height = y2 - y1
 
-        # Ignore tiny detections
+
+        # -------------------------------------------------
+        # Ignore extremely small faces
+        # -------------------------------------------------
+
         if face_width < 20 or face_height < 20:
             continue
+
 
         # -------------------------------------------------
         # Crop face
@@ -146,11 +188,13 @@ def analyze_frame(frame):
             x1:x2
         ]
 
+
         if face_crop.size == 0:
             continue
 
+
         # -------------------------------------------------
-        # Resize
+        # Resize face for deepfake model
         # -------------------------------------------------
 
         try:
@@ -169,6 +213,7 @@ def analyze_frame(frame):
             )
 
             continue
+
 
         # -------------------------------------------------
         # Deepfake prediction
@@ -189,30 +234,42 @@ def analyze_frame(frame):
 
             continue
 
+
         # -------------------------------------------------
         # Store prediction
         # -------------------------------------------------
 
         predictions.append({
+
             "face": face_index,
+
             "result": label,
+
             "confidence": round(
                 float(confidence) * 100,
                 2
             ),
+
             "bounding_box": {
+
                 "x": x1,
+
                 "y": y1,
+
                 "width": face_width,
+
                 "height": face_height
+
             }
+
         })
+
 
     return predictions
 
 
 # =========================================================
-# Root
+# ROOT
 # =========================================================
 
 @app.get("/")
@@ -225,7 +282,7 @@ def root():
 
 
 # =========================================================
-# Health Check
+# HEALTH CHECK
 # =========================================================
 
 @app.get("/health")
@@ -257,6 +314,7 @@ async def predict_image(
             detail="File type could not be detected."
         )
 
+
     if not file.content_type.startswith("image/"):
 
         raise HTTPException(
@@ -264,11 +322,13 @@ async def predict_image(
             detail="Please upload an image file."
         )
 
+
     # -----------------------------------------------------
     # Read image
     # -----------------------------------------------------
 
     image_bytes = await file.read()
+
 
     if not image_bytes:
 
@@ -277,10 +337,12 @@ async def predict_image(
             detail="The uploaded image is empty."
         )
 
+
     image_array = np.frombuffer(
         image_bytes,
         dtype=np.uint8
     )
+
 
     # -----------------------------------------------------
     # Decode image
@@ -291,6 +353,7 @@ async def predict_image(
         cv2.IMREAD_COLOR
     )
 
+
     if frame is None:
 
         raise HTTPException(
@@ -298,11 +361,15 @@ async def predict_image(
             detail="Could not read the uploaded image."
         )
 
+
     # -----------------------------------------------------
     # Analyze
     # -----------------------------------------------------
 
-    predictions = analyze_frame(frame)
+    predictions = analyze_frame(
+        frame
+    )
+
 
     # -----------------------------------------------------
     # No usable faces
@@ -314,20 +381,32 @@ async def predict_image(
             "success": True,
             "faces_detected": 0,
             "predictions": [],
-            "message": "No face detected or no face could be processed."
+            "message": (
+                "No face detected or no face "
+                "could be processed."
+            )
         }
+
 
     # -----------------------------------------------------
     # Final response
     # -----------------------------------------------------
 
     return {
+
         "success": True,
-        "faces_detected": len(predictions),
+
+        "faces_detected": len(
+            predictions
+        ),
+
         "predictions": predictions,
+
         "message": (
-            f"{len(predictions)} face(s) analyzed successfully."
+            f"{len(predictions)} face(s) "
+            "analyzed successfully."
         )
+
     }
 
 
@@ -348,8 +427,12 @@ async def predict_camera_frame(
 
         raise HTTPException(
             status_code=400,
-            detail="Camera frame type could not be detected."
+            detail=(
+                "Camera frame type "
+                "could not be detected."
+            )
         )
+
 
     if not file.content_type.startswith("image/"):
 
@@ -358,11 +441,13 @@ async def predict_camera_frame(
             detail="Camera frame must be an image."
         )
 
+
     # -----------------------------------------------------
-    # Read frame
+    # Read camera frame
     # -----------------------------------------------------
 
     image_bytes = await file.read()
+
 
     if not image_bytes:
 
@@ -371,19 +456,22 @@ async def predict_camera_frame(
             detail="Camera frame is empty."
         )
 
+
     image_array = np.frombuffer(
         image_bytes,
         dtype=np.uint8
     )
 
+
     # -----------------------------------------------------
-    # Decode frame
+    # Decode camera frame
     # -----------------------------------------------------
 
     frame = cv2.imdecode(
         image_array,
         cv2.IMREAD_COLOR
     )
+
 
     if frame is None:
 
@@ -392,31 +480,52 @@ async def predict_camera_frame(
             detail="Could not decode camera frame."
         )
 
-    # -----------------------------------------------------
-    # Analyze frame
-    # -----------------------------------------------------
-
-    predictions = analyze_frame(frame)
 
     # -----------------------------------------------------
-    # No face
+    # Analyze camera frame
+    # -----------------------------------------------------
+
+    predictions = analyze_frame(
+        frame
+    )
+
+
+    # -----------------------------------------------------
+    # No face detected
     # -----------------------------------------------------
 
     if not predictions:
 
         return {
+
             "success": True,
+
             "faces_detected": 0,
+
             "predictions": [],
+
             "message": "No face detected."
+
         }
+
 
     # -----------------------------------------------------
     # Camera response
     # -----------------------------------------------------
 
     return {
+
         "success": True,
-        "faces_detected": len(predictions),
-        "predictions": predictions
+
+        "faces_detected": len(
+            predictions
+        ),
+
+        "predictions": predictions,
+
+        "message": (
+            f"{len(predictions)} face(s) "
+            "analyzed successfully."
+        )
+
     }
