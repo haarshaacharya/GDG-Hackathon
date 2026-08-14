@@ -4,9 +4,10 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap');
 
-/* =========================
+
+/* =========================================================
    RESET
-   ========================= */
+   ========================================================= */
 
 * {
   margin: 0;
@@ -20,6 +21,7 @@ html {
 
 body {
   font-family: "Archivo", Arial, sans-serif;
+
   background:
     radial-gradient(
       circle at 50% -10%,
@@ -37,9 +39,10 @@ body {
   min-height: 100vh;
 }
 
-/* =========================
+
+/* =========================================================
    APP
-   ========================= */
+   ========================================================= */
 
 .app {
   min-height: 100vh;
@@ -47,10 +50,12 @@ body {
   position: relative;
 }
 
-/* subtle background grid */
+
+/* Background grid */
 
 .app::before {
   content: "";
+
   position: fixed;
   inset: 0;
 
@@ -77,9 +82,10 @@ body {
   z-index: 0;
 }
 
-/* =========================
+
+/* =========================================================
    NAVBAR
-   ========================= */
+   ========================================================= */
 
 .navbar {
   height: 88px;
@@ -101,11 +107,13 @@ body {
   z-index: 20;
 }
 
+
 /* Logo */
 
 .logo {
   font-size: 26px;
   font-weight: 900;
+
   letter-spacing: -1.5px;
 
   background: linear-gradient(
@@ -117,14 +125,17 @@ body {
 
   -webkit-background-clip: text;
   background-clip: text;
+
   color: transparent;
 }
 
-/* Online status */
+
+/* Backend status */
 
 .status {
   display: flex;
   align-items: center;
+
   gap: 10px;
 
   color: #a9b6d0;
@@ -150,9 +161,10 @@ body {
   animation: pulse 2s infinite;
 }
 
-/* =========================
+
+/* =========================================================
    MAIN
-   ========================= */
+   ========================================================= */
 
 .main-content {
   width: min(1180px, 90%);
@@ -163,9 +175,10 @@ body {
   z-index: 1;
 }
 
-/* =========================
+
+/* =========================================================
    HERO
-   ========================= */
+   ========================================================= */
 
 .hero {
   text-align: center;
@@ -173,7 +186,8 @@ body {
   padding: 125px 20px 85px;
 }
 
-/* small label */
+
+/* Small label */
 
 .hero::before {
   content: "AI-POWERED AUTHENTICITY ENGINE";
@@ -197,10 +211,12 @@ body {
 
   border-radius: 999px;
 
-  box-shadow: 0 0 30px rgba(40, 100, 255, 0.08);
+  box-shadow:
+    0 0 30px rgba(40, 100, 255, 0.08);
 }
 
-/* Main heading: AI-POWERED */
+
+/* Main heading */
 
 .hero h1 {
   max-width: 1050px;
@@ -220,16 +236,17 @@ body {
   text-transform: uppercase;
 }
 
-/* Gradient heading: DEEPFAKE DETECTION in one line & slightly smaller */
+
+/* Gradient heading */
 
 .hero h1 span {
   display: block;
 
   margin-top: 10px;
 
-  font-size: 0.8em; /* AI-POWERED se size thodi kam */
+  font-size: 0.8em;
 
-  white-space: nowrap; /* Single line me rakhne ke liye */
+  white-space: nowrap;
 
   letter-spacing: -3px;
 
@@ -246,8 +263,12 @@ body {
 
   color: transparent;
 
-  filter: drop-shadow(0 10px 35px rgba(80, 110, 255, 0.2));
+  filter:
+    drop-shadow(
+      0 10px 35px rgba(80, 110, 255, 0.2)
+    );
 }
+
 
 /* Hero paragraph */
 
@@ -265,9 +286,10 @@ body {
   font-weight: 500;
 }
 
-/* =========================
+
+/* =========================================================
    UPLOAD CARD
-   ========================= */
+   ========================================================= */
 
 .upload-card {
   position: relative;
@@ -291,7 +313,8 @@ body {
   backdrop-filter: blur(20px);
 }
 
-/* blue glow behind card */
+
+/* Blue glow */
 
 .upload-card::before {
   content: "";
@@ -313,9 +336,10 @@ body {
   pointer-events: none;
 }
 
-/* =========================
+
+/* =========================================================
    UPLOAD AREA
-   ========================= */
+   ========================================================= */
 
 .upload-area {
   min-height: 430px;
@@ -362,9 +386,10 @@ body {
     rgba(8, 14, 28, 0.85);
 }
 
-/* =========================
+
+/* =========================================================
    UPLOAD ICON
-   ========================= */
+   ========================================================= */
 
 .upload-icon {
   width: 72px;
@@ -390,12 +415,14 @@ body {
 
   border: 1px solid rgba(96, 145, 255, 0.25);
 
-  box-shadow: 0 15px 40px rgba(45, 105, 255, 0.15);
+  box-shadow:
+    0 15px 40px rgba(45, 105, 255, 0.15);
 }
 
-/* =========================
+
+/* =========================================================
    UPLOAD TEXT
-   ========================= */
+   ========================================================= */
 
 .upload-area h2 {
   margin-top: 26px;
@@ -417,18 +444,22 @@ body {
   text-align: center;
 }
 
-/* =========================
-   IMAGE PREVIEW & CROSS BUTTON
-   ========================= */
+
+/* =========================================================
+   IMAGE PREVIEW
+   ========================================================= */
 
 .preview-container {
-  position: relative; /* Image aur button ke alignment ke liye */
+  position: relative;
+
   display: inline-block;
+
   max-width: 100%;
 }
 
 .preview-image {
   width: auto;
+
   max-width: 100%;
   max-height: 420px;
 
@@ -438,15 +469,20 @@ body {
 
   border: 1px solid rgba(255, 255, 255, 0.12);
 
-  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, 0.45);
 
   display: block;
 }
 
-/* Cross Button (Top Right Corner of Image) */
+
+/* =========================================================
+   CROSS BUTTON
+   ========================================================= */
 
 .remove-image-button {
   position: absolute;
+
   top: 12px;
   right: 12px;
 
@@ -462,9 +498,11 @@ body {
   color: #ffffff;
 
   font-size: 20px;
+
   line-height: 1;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -479,13 +517,17 @@ body {
 
 .remove-image-button:hover {
   background: rgba(255, 50, 75, 0.85);
-  border-color: rgba(255, 70, 90, 0.5);
+
+  border-color:
+    rgba(255, 70, 90, 0.5);
+
   transform: scale(1.1);
 }
 
-/* =========================
+
+/* =========================================================
    CHOOSE BUTTON
-   ========================= */
+   ========================================================= */
 
 .choose-button {
   margin-top: 28px;
@@ -503,7 +545,8 @@ body {
 
   background: #18243b;
 
-  border: 1px solid rgba(120, 155, 220, 0.22);
+  border:
+    1px solid rgba(120, 155, 220, 0.22);
 
   color: #f4f7ff;
 
@@ -525,14 +568,17 @@ body {
 
   background: #21314f;
 
-  border-color: rgba(110, 164, 255, 0.5);
+  border-color:
+    rgba(110, 164, 255, 0.5);
 
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
-/* =========================
+
+/* =========================================================
    ANALYZE BUTTON
-   ========================= */
+   ========================================================= */
 
 .analyze-button {
   width: 100%;
@@ -564,7 +610,8 @@ body {
 
   cursor: pointer;
 
-  box-shadow: 0 15px 40px rgba(63, 110, 255, 0.22);
+  box-shadow:
+    0 15px 40px rgba(63, 110, 255, 0.22);
 
   transition:
     transform 0.2s ease,
@@ -577,7 +624,8 @@ body {
 
   filter: brightness(1.08);
 
-  box-shadow: 0 20px 55px rgba(63, 110, 255, 0.36);
+  box-shadow:
+    0 20px 55px rgba(63, 110, 255, 0.36);
 }
 
 .analyze-button:active:not(:disabled) {
@@ -590,9 +638,10 @@ body {
   cursor: not-allowed;
 }
 
-/* =========================
+
+/* =========================================================
    ERROR
-   ========================= */
+   ========================================================= */
 
 .error-box {
   margin-top: 20px;
@@ -603,72 +652,126 @@ body {
 
   color: #ff9da8;
 
-  background: rgba(255, 50, 75, 0.07);
+  background:
+    rgba(255, 50, 75, 0.07);
 
-  border: 1px solid rgba(255, 70, 90, 0.28);
+  border:
+    1px solid rgba(255, 70, 90, 0.28);
 
   font-size: 14px;
 
   font-weight: 600;
 }
 
-/* =========================
+
+/* =========================================================
    RESULT CARD
-   ========================= */
+   ========================================================= */
 
 .result-card {
-  margin-top: 30px;
+  margin-top: 34px;
 
-  padding: 32px;
+  padding: 42px;
 
   border-radius: 28px;
 
-  background: linear-gradient(
-    145deg,
-    rgba(17, 26, 45, 0.92),
-    rgba(8, 13, 25, 0.95)
-  );
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 26, 45, 0.96),
+      rgba(8, 13, 25, 0.98)
+    );
 
-  border: 1px solid rgba(120, 155, 220, 0.15);
+  border:
+    1px solid rgba(120, 155, 220, 0.15);
 
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.3);
+
+  position: relative;
+
+  overflow: hidden;
 }
+
+
+/* Result card glow */
+
+.result-card::before {
+  content: "";
+
+  position: absolute;
+
+  width: 300px;
+  height: 180px;
+
+  top: -100px;
+  right: -80px;
+
+  background:
+    rgba(80, 110, 255, 0.12);
+
+  filter: blur(80px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   RESULT HEADER
+   ========================================================= */
 
 .result-card h2 {
-  font-size: 28px;
+  font-size: 34px;
 
-  font-weight: 800;
+  font-weight: 900;
 
-  letter-spacing: -1px;
+  letter-spacing: -1.5px;
 
-  margin-bottom: 25px;
+  margin-bottom: 32px;
+
+  color: #f7f9ff;
+
+  position: relative;
 }
 
-/* =========================
+
+/* =========================================================
    RESULT INFO
-   ========================= */
+   ========================================================= */
 
 .result-info {
   display: flex;
 
   flex-direction: column;
 
-  gap: 14px;
+  gap: 16px;
+
+  position: relative;
 }
 
-/* Result item */
 
-.result-item,
-.prediction {
-  min-height: 72px;
+/* =========================================================
+   SUMMARY RESULT
+   ========================================================= */
 
-  padding: 18px 22px;
+.result-item {
+  width: 100%;
 
-  border-radius: 15px;
+  min-height: 82px;
 
-  background: rgba(13, 22, 39, 0.8);
+  padding: 20px 24px;
 
-  border: 1px solid rgba(120, 155, 220, 0.13);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(20, 32, 55, 0.9),
+      rgba(12, 20, 35, 0.9)
+    );
+
+  border:
+    1px solid rgba(120, 155, 220, 0.14);
 
   display: flex;
 
@@ -676,94 +779,276 @@ body {
 
   justify-content: space-between;
 
+  gap: 25px;
+
   transition:
-    transform 0.2s ease,
-    border-color 0.2s ease;
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
 }
 
-.result-item:hover,
-.prediction:hover {
+.result-item:hover {
   transform: translateY(-2px);
 
-  border-color: rgba(100, 150, 255, 0.28);
+  border-color:
+    rgba(100, 150, 255, 0.32);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(25, 40, 68, 0.95),
+      rgba(13, 22, 39, 0.95)
+    );
 }
 
-/* labels */
+
+/* =========================================================
+   RESULT LABELS
+   ========================================================= */
 
 .result-item span,
 .prediction span {
   display: block;
 
-  color: #8392ae;
+  color: #8e9db8;
 
   font-size: 13px;
 
+  line-height: 1.4;
+
   font-weight: 600;
 
-  margin-bottom: 7px;
+  margin-bottom: 8px;
+
+  letter-spacing: 0.2px;
 }
 
-/* numbers */
+
+/* =========================================================
+   RESULT NUMBERS
+   ========================================================= */
 
 .result-item strong {
-  font-size: 20px;
+  display: block;
+
+  font-size: 24px;
+
+  line-height: 1;
 
   font-weight: 800;
 
   color: #ffffff;
 }
 
-/* prediction */
+
+/* =========================================================
+   PREDICTION CARD
+   ========================================================= */
+
+.prediction {
+  width: 100%;
+
+  min-height: 92px;
+
+  padding: 20px 24px;
+
+  border-radius: 18px;
+
+  background:
+    rgba(10, 18, 32, 0.86);
+
+  border:
+    1px solid rgba(120, 155, 220, 0.12);
+
+  display: grid;
+
+  grid-template-columns: 1fr auto;
+
+  align-items: center;
+
+  gap: 30px;
+
+  transition:
+    transform 0.25s ease,
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.prediction:hover {
+  transform: translateY(-2px);
+
+  border-color:
+    rgba(100, 150, 255, 0.28);
+
+  background:
+    rgba(15, 26, 46, 0.95);
+}
+
+
+/* Left side of prediction */
+
+.prediction > div:first-child {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  justify-content: center;
+}
+
+
+/* Right side */
 
 .prediction > div:last-child {
   text-align: right;
+
+  min-width: 130px;
 }
+
+
+/* =========================================================
+   PREDICTION RESULT
+   ========================================================= */
 
 .prediction strong {
-  font-size: 20px;
+  display: block;
 
-  font-weight: 800;
+  font-size: 23px;
+
+  line-height: 1.15;
+
+  font-weight: 900;
+
+  letter-spacing: 0.3px;
 }
 
-/* =========================
-   REAL / FAKE
-   ========================= */
+
+/* =========================================================
+   REAL
+   ========================================================= */
 
 .real {
   color: #35e890 !important;
 
-  text-shadow: 0 0 20px rgba(53, 232, 144, 0.18);
+  text-shadow:
+    0 0 20px rgba(53, 232, 144, 0.18);
 }
+
+
+/* =========================================================
+   FAKE
+   ========================================================= */
 
 .fake {
   color: #ff5470 !important;
 
-  text-shadow: 0 0 20px rgba(255, 84, 112, 0.18);
+  text-shadow:
+    0 0 20px rgba(255, 84, 112, 0.18);
 }
 
-/* =========================
+
+/* =========================================================
+   CONFIDENCE
+   ========================================================= */
+
+.prediction > div:last-child strong {
+  color: #f4f7ff;
+
+  font-size: 22px;
+}
+
+
+/* =========================================================
+   FACE-BY-FACE SEPARATION
+   ========================================================= */
+
+.prediction + .prediction {
+  margin-top: 0;
+}
+
+
+/* =========================================================
    MESSAGE
-   ========================= */
+   ========================================================= */
 
 .result-message {
-  margin-top: 20px;
+  margin-top: 24px;
 
-  padding: 16px 20px;
+  padding: 18px 22px;
 
-  border-radius: 13px;
+  border-radius: 15px;
 
-  color: #8e9bb4;
+  color: #9aa8c0;
 
-  background: rgba(255, 255, 255, 0.025);
+  background:
+    rgba(255, 255, 255, 0.025);
 
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
 
   font-size: 14px;
+
+  line-height: 1.6;
+
+  font-weight: 500;
 }
 
-/* =========================
+
+/* =========================================================
+   EMPTY / NO FACE MESSAGE
+   ========================================================= */
+
+.result-card:has(.result-message) {
+  border-color:
+    rgba(120, 155, 220, 0.18);
+}
+
+
+/* =========================================================
+   LOADING STATE
+   ========================================================= */
+
+.analyze-button:disabled {
+  background:
+    linear-gradient(
+      100deg,
+      #286fda,
+      #6676e9,
+      #8168dd
+    );
+
+  position: relative;
+
+  overflow: hidden;
+}
+
+.analyze-button:disabled::after {
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: -100%;
+
+  width: 60%;
+  height: 100%;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.18),
+      transparent
+    );
+
+  animation: loadingShimmer 1.4s infinite;
+}
+
+
+/* =========================================================
    ANIMATIONS
-   ========================= */
+   ========================================================= */
 
 @keyframes pulse {
   0%,
@@ -782,15 +1067,29 @@ body {
 
     transform: scale(0.85);
 
-    box-shadow: 0 0 4px rgba(32, 232, 137, 0.5);
+    box-shadow:
+      0 0 4px rgba(32, 232, 137, 0.5);
   }
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
+
+@keyframes loadingShimmer {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 150%;
+  }
+}
+
+
+/* =========================================================
+   RESPONSIVE — TABLET
+   ========================================================= */
 
 @media (max-width: 900px) {
+
   .navbar {
     padding: 0 5%;
   }
@@ -806,7 +1105,7 @@ body {
   }
 
   .hero h1 span {
-    white-space: normal; /* Mobile me wrapping allow taaki screen se bahar na jaye */
+    white-space: normal;
   }
 
   .upload-card {
@@ -816,9 +1115,23 @@ body {
   .upload-area {
     min-height: 360px;
   }
+
+  .result-card {
+    padding: 30px;
+  }
+
+  .result-card h2 {
+    font-size: 30px;
+  }
 }
 
+
+/* =========================================================
+   RESPONSIVE — MOBILE
+   ========================================================= */
+
 @media (max-width: 600px) {
+
   .navbar {
     height: 72px;
   }
@@ -861,6 +1174,9 @@ body {
     margin-top: 28px;
   }
 
+
+  /* Upload */
+
   .upload-card {
     padding: 12px;
 
@@ -877,42 +1193,180 @@ body {
     max-height: 300px;
   }
 
+
+  /* Result */
+
   .result-card {
+    margin-top: 24px;
+
     padding: 22px;
 
     border-radius: 22px;
   }
 
   .result-card h2 {
-    font-size: 23px;
+    font-size: 25px;
+
+    margin-bottom: 24px;
   }
 
-  .result-item,
+
+  .result-info {
+    gap: 12px;
+  }
+
+
+  .result-item {
+    min-height: 70px;
+
+    padding: 16px;
+
+    gap: 15px;
+  }
+
+
+  .result-item span,
+  .prediction span {
+    font-size: 11px;
+
+    margin-bottom: 6px;
+  }
+
+
+  .result-item strong {
+    font-size: 20px;
+  }
+
+
+  /* Prediction */
+
   .prediction {
-    padding: 15px;
+    min-height: 82px;
+
+    padding: 16px;
+
+    grid-template-columns: minmax(0, 1fr) auto;
+
+    gap: 15px;
+  }
+
+
+  .prediction > div:last-child {
+    min-width: 95px;
+  }
+
+
+  .prediction strong {
+    font-size: 19px;
+  }
+
+
+  .prediction > div:last-child strong {
+    font-size: 18px;
+  }
+
+
+  .result-message {
+    margin-top: 18px;
+
+    padding: 15px 16px;
+
+    font-size: 13px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+  .main-content {
+    width: 94%;
+  }
+
+  .hero h1 {
+    font-size: 32px;
+  }
+
+  .hero h1 span {
+    font-size: 0.75em;
+  }
+
+  .status {
+    gap: 6px;
+
+    font-size: 10px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+  }
+
+
+  .result-card {
+    padding: 18px;
+  }
+
+
+  .result-card h2 {
+    font-size: 22px;
+  }
+
+
+  .result-item {
+    padding: 14px;
 
     min-height: 65px;
   }
 
-  .prediction strong,
-  .result-item strong {
-    font-size: 17px;
+
+  .prediction {
+    padding: 14px;
+
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+
+  .prediction > div:last-child {
+    text-align: left;
+
+    min-width: unset;
+
+    width: 100%;
+
+    padding-top: 12px;
+
+    border-top:
+      1px solid rgba(255, 255, 255, 0.06);
+  }
+
+
+  .prediction > div:last-child strong {
+    font-size: 18px;
   }
 }
 
-/* =========================
+
+/* =========================================================
    SELECTION
-   ========================= */
+   ========================================================= */
 
 ::selection {
-  background: rgba(83, 133, 255, 0.35);
+  background:
+    rgba(83, 133, 255, 0.35);
 
   color: white;
 }
 
-/* =========================
+
+/* =========================================================
    SCROLLBAR
-   ========================= */
+   ========================================================= */
 
 ::-webkit-scrollbar {
   width: 8px;

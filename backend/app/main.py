@@ -72,23 +72,43 @@ def health_check():
 @app.post("/predict")
 async def predict_image(file: UploadFile = File(...)):
 
-    # Check image type
-    if not file.content_type or not file.content_type.startswith("image/"):
+    # --------------------------------------------------
+    # Validate uploaded file
+    # --------------------------------------------------
+
+    if not file.content_type:
+        raise HTTPException(
+            status_code=400,
+            detail="File type could not be detected."
+        )
+
+    if not file.content_type.startswith("image/"):
         raise HTTPException(
             status_code=400,
             detail="Please upload an image file."
         )
 
+    # --------------------------------------------------
     # Read uploaded image
+    # --------------------------------------------------
+
     image_bytes = await file.read()
 
-    # Convert bytes to NumPy array
+    if not image_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="The uploaded image is empty."
+        )
+
     image_array = np.frombuffer(
         image_bytes,
         dtype=np.uint8
     )
 
+    # --------------------------------------------------
     # Decode image
+    # --------------------------------------------------
+
     frame = cv2.imdecode(
         image_array,
         cv2.IMREAD_COLOR
@@ -99,6 +119,8 @@ async def predict_image(file: UploadFile = File(...)):
             status_code=400,
             detail="Could not read the uploaded image."
         )
+
+    frame_height, frame_width = frame.shape[:2]
 
     # --------------------------------------------------
     # Create MediaPipe face detector
@@ -111,7 +133,11 @@ async def predict_image(file: UploadFile = File(...)):
     options = vision.FaceDetectorOptions(
         base_options=base_options,
         running_mode=vision.RunningMode.IMAGE,
-        min_detection_confidence=0.5
+
+        # Slightly lower threshold so smaller/
+        # secondary faces have a better chance of
+        # being detected.
+        min_detection_confidence=0.35
     )
 
     detector = vision.FaceDetector.create_from_options(
@@ -120,7 +146,10 @@ async def predict_image(file: UploadFile = File(...)):
 
     try:
 
+        # --------------------------------------------------
         # BGR -> RGB
+        # --------------------------------------------------
+
         rgb_frame = cv2.cvtColor(
             frame,
             cv2.COLOR_BGR2RGB
@@ -131,46 +160,81 @@ async def predict_image(file: UploadFile = File(...)):
             data=rgb_frame
         )
 
-        # Detect faces
+        # --------------------------------------------------
+        # Detect ALL available faces
+        # --------------------------------------------------
+
         result = detector.detect(mp_image)
+
+        detections = result.detections or []
 
         # --------------------------------------------------
         # No face found
         # --------------------------------------------------
 
-        if not result.detections:
+        if len(detections) == 0:
             return {
                 "success": True,
                 "faces_detected": 0,
+                "predictions": [],
                 "message": "No face detected."
             }
 
         predictions = []
 
-        frame_height, frame_width = frame.shape[:2]
-
         # --------------------------------------------------
         # Process every detected face
         # --------------------------------------------------
 
-        for detection in result.detections:
+        for face_index, detection in enumerate(
+            detections,
+            start=1
+        ):
 
             bbox = detection.bounding_box
 
-            x1 = max(0, bbox.origin_x)
-            y1 = max(0, bbox.origin_y)
+            # --------------------------------------------------
+            # Bounding box
+            # --------------------------------------------------
+
+            x1 = max(
+                0,
+                int(bbox.origin_x)
+            )
+
+            y1 = max(
+                0,
+                int(bbox.origin_y)
+            )
 
             x2 = min(
                 frame_width,
-                bbox.origin_x + bbox.width
+                int(bbox.origin_x + bbox.width)
             )
 
             y2 = min(
                 frame_height,
-                bbox.origin_y + bbox.height
+                int(bbox.origin_y + bbox.height)
             )
 
+            # --------------------------------------------------
+            # Validate bounding box
+            # --------------------------------------------------
+
+            if x2 <= x1 or y2 <= y1:
+                continue
+
+            face_width = x2 - x1
+            face_height = y2 - y1
+
+            # Ignore extremely tiny detections
+            if face_width < 20 or face_height < 20:
+                continue
+
+            # --------------------------------------------------
             # Crop face
+            # --------------------------------------------------
+
             face_crop = frame[
                 y1:y2,
                 x1:x2
@@ -179,34 +243,72 @@ async def predict_image(file: UploadFile = File(...)):
             if face_crop.size == 0:
                 continue
 
+            # --------------------------------------------------
             # Resize face for AI model
-            face_input = cv2.resize(
-                face_crop,
-                (224, 224)
-            )
+            # --------------------------------------------------
 
+            try:
+
+                face_input = cv2.resize(
+                    face_crop,
+                    (224, 224),
+                    interpolation=cv2.INTER_AREA
+                )
+
+            except Exception:
+                continue
+
+            # --------------------------------------------------
             # Deepfake prediction
-            label, confidence = predict_face(
-                face_input
-            )
+            # --------------------------------------------------
+
+            try:
+
+                label, confidence = predict_face(
+                    face_input
+                )
+
+            except Exception as prediction_error:
+
+                print(
+                    f"Face {face_index} prediction failed: "
+                    f"{prediction_error}"
+                )
+
+                continue
+
+            # --------------------------------------------------
+            # Store prediction
+            # --------------------------------------------------
 
             predictions.append({
+                "face": face_index,
                 "result": label,
                 "confidence": round(
-                    confidence * 100,
+                    float(confidence) * 100,
                     2
-                )
+                ),
+                "bounding_box": {
+                    "x": x1,
+                    "y": y1,
+                    "width": face_width,
+                    "height": face_height
+                }
             })
 
         # --------------------------------------------------
-        # Face processing failed
+        # No usable faces
         # --------------------------------------------------
 
         if not predictions:
             return {
                 "success": True,
                 "faces_detected": 0,
-                "message": "Face crop could not be processed."
+                "predictions": [],
+                "message": (
+                    "Faces were detected, but none could "
+                    "be processed."
+                )
             }
 
         # --------------------------------------------------
@@ -216,8 +318,12 @@ async def predict_image(file: UploadFile = File(...)):
         return {
             "success": True,
             "faces_detected": len(predictions),
-            "predictions": predictions
+            "predictions": predictions,
+            "message": (
+                f"{len(predictions)} face(s) analyzed successfully."
+            )
         }
 
     finally:
+
         detector.close()
