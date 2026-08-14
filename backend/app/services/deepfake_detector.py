@@ -1,7 +1,11 @@
+import gc
 import torch
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
+# Optimize memory footprint for 512MB RAM instances (Render Free Tier)
+torch.set_num_threads(1)
+torch.set_grad_enabled(False)
 
 MODEL_NAME = "prithivMLmods/deepfake-detector-model-v1"
 
@@ -11,17 +15,21 @@ _model = None
 
 def get_model():
     """
-    Lazy load the deepfake detection model and processor.
-    This allows the web server to bind to the port immediately on startup.
+    Lazy load the deepfake detection model and processor with low memory usage.
     """
     global _processor, _model
     if _model is None or _processor is None:
-        print("Loading FakeShield AI model...")
+        print("Loading FakeShield AI model (low memory mode)...")
         _processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
-        _model = AutoModelForImageClassification.from_pretrained(MODEL_NAME)
+        _model = AutoModelForImageClassification.from_pretrained(
+            MODEL_NAME,
+            low_cpu_mem_usage=True
+        )
         _model.eval()
+        gc.collect()
         print("✅ Model loaded successfully.")
     return _processor, _model
+
 
 
 def predict_face(face_crop):
