@@ -87,7 +87,7 @@ face_detector_options = vision.FaceDetectorOptions(
 
     running_mode=vision.RunningMode.IMAGE,
 
-    min_detection_confidence=0.10
+    min_detection_confidence=0.45
 )
 
 
@@ -243,6 +243,50 @@ async def read_uploaded_image(
     return frame
 
 
+def apply_nms(boxes, iou_threshold=0.35):
+    """
+    Remove overlapping duplicate bounding boxes using Non-Maximum Suppression.
+    """
+    if not boxes:
+        return []
+
+    sorted_boxes = sorted(boxes, key=lambda b: b[2] * b[3], reverse=True)
+    kept = []
+
+    for current in sorted_boxes:
+        cx1, cy1, cw, ch = current
+        cx2, cy2 = cx1 + cw, cy1 + ch
+        current_area = cw * ch
+
+        keep = True
+        for (kx1, ky1, kw, kh) in kept:
+            kx2, ky2 = kx1 + kw, ky1 + kh
+
+            # Intersection
+            ix1 = max(cx1, kx1)
+            iy1 = max(cy1, ky1)
+            ix2 = min(cx2, kx2)
+            iy2 = min(cy2, ky2)
+
+            iw = max(0, ix2 - ix1)
+            ih = max(0, iy2 - iy1)
+            intersection = iw * ih
+
+            if intersection > 0:
+                union = current_area + (kw * kh) - intersection
+                iou = intersection / union if union > 0 else 0
+                overlap_ratio = intersection / current_area if current_area > 0 else 0
+
+                if iou > iou_threshold or overlap_ratio > 0.50:
+                    keep = False
+                    break
+
+        if keep:
+            kept.append(current)
+
+    return kept
+
+
 # =========================================================
 # HELPER: ANALYZE FRAME
 # =========================================================
@@ -346,9 +390,9 @@ def analyze_frame(frame, allow_fallback=False):
             for cascade in haar_cascades:
                 haar_faces = cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.08,
-                    minNeighbors=2,
-                    minSize=(16, 16)
+                    scaleFactor=1.1,
+                    minNeighbors=5,
+                    minSize=(40, 40)
                 )
                 if len(haar_faces) > 0:
                     for (hx, hy, hw, hh) in haar_faces:
@@ -356,6 +400,12 @@ def analyze_frame(frame, allow_fallback=False):
                     break
         except Exception as haar_err:
             print("Haar cascade fallback error:", haar_err)
+
+    # -----------------------------------------------------
+    # Apply Non-Maximum Suppression (Merge duplicate boxes)
+    # -----------------------------------------------------
+
+    boxes = apply_nms(boxes)
 
     predictions = []
 
