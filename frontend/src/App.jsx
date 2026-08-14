@@ -386,7 +386,7 @@ function App() {
         cameraSessionRef.current;
 
       analysisTimesRef.current = [];
-      frameBusyRef.current = false;
+      inFlightRef.current = 0;
 
       if (
         !navigator.mediaDevices ||
