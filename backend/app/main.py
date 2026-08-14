@@ -596,25 +596,25 @@ async def predict_image(
 
 
         # -------------------------------------------------
-        # No usable faces
+        # Ensure at least 1 prediction is guaranteed
         # -------------------------------------------------
 
         if not predictions:
+            label, conf = predict_face(frame)
+            conf_pct = float(conf) * 100 if float(conf) <= 1 else float(conf)
+            conf_pct = max(0, min(100, conf_pct))
 
-            return {
-
-                "success": True,
-
-                "faces_detected": 0,
-
-                "predictions": [],
-
-                "message": (
-                    "No face detected or no face "
-                    "could be processed."
-                )
-
-            }
+            predictions = [{
+                "face": 1,
+                "result": str(label).upper(),
+                "confidence": round(conf_pct, 2),
+                "bounding_box": {
+                    "x": 0,
+                    "y": 0,
+                    "width": frame.shape[1],
+                    "height": frame.shape[0]
+                }
+            }]
 
 
         # -------------------------------------------------
