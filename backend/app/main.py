@@ -87,7 +87,7 @@ face_detector_options = vision.FaceDetectorOptions(
 
     running_mode=vision.RunningMode.IMAGE,
 
-    min_detection_confidence=0.30
+    min_detection_confidence=0.20
 )
 
 
@@ -734,12 +734,12 @@ async def predict_camera_frame(
 
 
         # -------------------------------------------------
-        # Analyze frame (no full-frame fallback for live cam)
+        # Analyze frame (with fallback for partial/cropped faces)
         # -------------------------------------------------
 
         predictions = analyze_frame(
             frame,
-            allow_fallback=False
+            allow_fallback=True
         )
 
 
