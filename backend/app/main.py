@@ -1,5 +1,10 @@
+import os
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+os.environ["ABSL_LOG_MINIMUM_SEVERITY"] = "2"
+
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
 
 import cv2
 import numpy as np
