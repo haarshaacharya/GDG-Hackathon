@@ -1,5 +1,6 @@
 import gc
 import torch
+import numpy as np
 from PIL import Image
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
@@ -34,17 +35,18 @@ def get_model():
 
 def predict_face(face_crop):
     """
-    Predict whether an OpenCV face crop is REAL or FAKE.
-
-    face_crop:
-        OpenCV image in BGR format.
+    Predict whether an OpenCV face crop or PIL Image is REAL or FAKE.
     """
     processor, model = get_model()
 
-    # OpenCV BGR → RGB
-    image = Image.fromarray(
-        face_crop[:, :, ::-1]
-    ).convert("RGB")
+    if isinstance(face_crop, np.ndarray):
+        image = Image.fromarray(
+            face_crop[:, :, ::-1]
+        ).convert("RGB")
+    elif isinstance(face_crop, Image.Image):
+        image = face_crop.convert("RGB")
+    else:
+        image = Image.fromarray(np.array(face_crop)).convert("RGB")
 
     # Prepare model input
     inputs = processor(
@@ -61,13 +63,28 @@ def predict_face(face_crop):
         dim=-1
     )[0]
 
-    fake_score = probabilities[0].item()
-    real_score = probabilities[1].item()
+    predicted_id = torch.argmax(probabilities, dim=-1).item()
+    confidence = probabilities[predicted_id].item()
 
-    if fake_score > real_score:
-        return "FAKE", fake_score
+    if hasattr(model.config, "id2label") and model.config.id2label:
+        label = model.config.id2label.get(predicted_id, "REAL" if predicted_id == 1 else "FAKE")
+    else:
+        fake_score = probabilities[0].item()
+        real_score = probabilities[1].item()
+        if fake_score > real_score:
+            label, confidence = "FAKE", fake_score
+        else:
+            label, confidence = "REAL", real_score
 
-    return "REAL", real_score
+    label_str = str(label).upper()
+    if "FAKE" in label_str:
+        clean_label = "FAKE"
+    elif "REAL" in label_str:
+        clean_label = "REAL"
+    else:
+        clean_label = label_str
+
+    return clean_label, confidence
 
 
 def predict_image(image_path):
