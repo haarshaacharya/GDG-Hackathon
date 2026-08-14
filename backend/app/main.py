@@ -87,7 +87,7 @@ face_detector_options = vision.FaceDetectorOptions(
 
     running_mode=vision.RunningMode.IMAGE,
 
-    min_detection_confidence=0.45
+    min_detection_confidence=0.30
 )
 
 
@@ -243,7 +243,7 @@ async def read_uploaded_image(
     return frame
 
 
-def apply_nms(boxes, iou_threshold=0.35):
+def apply_nms(boxes, iou_threshold=0.50):
     """
     Remove overlapping duplicate bounding boxes using Non-Maximum Suppression.
     """
@@ -391,8 +391,8 @@ def analyze_frame(frame, allow_fallback=False):
                 haar_faces = cascade.detectMultiScale(
                     gray,
                     scaleFactor=1.1,
-                    minNeighbors=5,
-                    minSize=(40, 40)
+                    minNeighbors=4,
+                    minSize=(30, 30)
                 )
                 if len(haar_faces) > 0:
                     for (hx, hy, hw, hh) in haar_faces:

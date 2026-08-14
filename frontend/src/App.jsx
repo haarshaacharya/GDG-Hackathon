@@ -587,7 +587,7 @@ function App() {
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            25
+            10
           );
 
         return;
@@ -623,7 +623,7 @@ function App() {
       cameraTimerRef.current =
         setTimeout(
           processFrame,
-          65
+          40
         );
 
       let requestSucceeded = false;

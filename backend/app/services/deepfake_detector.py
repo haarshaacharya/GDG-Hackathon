@@ -22,19 +22,11 @@ def get_model():
     if _model is None or _processor is None:
         print("Loading FakeShield AI model (low memory mode)...")
         _processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
-        raw_model = AutoModelForImageClassification.from_pretrained(
+        _model = AutoModelForImageClassification.from_pretrained(
             MODEL_NAME,
             low_cpu_mem_usage=True
         )
-        raw_model.eval()
-        try:
-            _model = torch.quantization.quantize_dynamic(
-                raw_model, {torch.nn.Linear}, dtype=torch.qint8
-            )
-            del raw_model
-        except Exception as quant_err:
-            print("Quantization skipped, using standard model:", quant_err)
-            _model = raw_model
+        _model.eval()
         gc.collect()
         print("✅ Model loaded successfully.")
     return _processor, _model
@@ -96,7 +88,7 @@ def predict_face(face_crop):
         return clean_label, confidence
     except Exception as err:
         print("Deepfake prediction error:", err)
-        return "REAL", 0.95
+        raise RuntimeError(f"Prediction failed: {err}")
 
 
 def predict_image(image_path):
