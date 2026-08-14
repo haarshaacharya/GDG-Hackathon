@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 function App() {
-
   // =====================================================
   // IMAGE STATES
   // =====================================================
@@ -14,18 +13,19 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-
   // =====================================================
   // CAMERA STATES
   // =====================================================
 
   const [cameraActive, setCameraActive] = useState(false);
+  const [showCameraOverlay, setShowCameraOverlay] = useState(false);
+
   const [cameraPredictions, setCameraPredictions] = useState([]);
   const [cameraFaces, setCameraFaces] = useState(0);
   const [cameraError, setCameraError] = useState("");
+
   const [fps, setFps] = useState(0);
   const [cameraAnalyzing, setCameraAnalyzing] = useState(false);
-
 
   // =====================================================
   // CAMERA REFS
@@ -38,13 +38,25 @@ function App() {
   const cameraTimerRef = useRef(null);
   const frameBusyRef = useRef(false);
 
+  // Abort current AI request when camera stops
+  const cameraAbortRef = useRef(null);
+
+  // Used to invalidate old camera loops
+  const cameraSessionRef = useRef(0);
+
+  // Actual AI analysis FPS tracking
+  const analysisTimesRef = useRef([]);
+
+  // Target AI analysis rate
+  // Camera preview can remain 30 FPS,
+  // while backend analysis runs around 5 FPS.
+  const AI_INTERVAL = 200;
 
   // =====================================================
   // RESTORE IMAGE AFTER REFRESH
   // =====================================================
 
   useEffect(() => {
-
     const savedImage =
       localStorage.getItem("fakeshield_image");
 
@@ -54,15 +66,12 @@ function App() {
     const savedType =
       localStorage.getItem("fakeshield_type");
 
-
     if (savedImage) {
-
       setPreview(savedImage);
 
       fetch(savedImage)
         .then((response) => response.blob())
         .then((blob) => {
-
           const file = new File(
             [blob],
             savedName || "fakeshield-image.jpg",
@@ -75,59 +84,35 @@ function App() {
           );
 
           setSelectedFile(file);
-
         })
         .catch(() => {
-
           setError(
             "Could not restore the saved image."
           );
-
         });
-
     }
-
   }, []);
 
-
   // =====================================================
-  // CLEAN CAMERA WHEN PAGE CLOSES
+  // CLEAN EVERYTHING WHEN PAGE CLOSES
   // =====================================================
 
   useEffect(() => {
-
     return () => {
-
-      if (cameraTimerRef.current) {
-        clearTimeout(cameraTimerRef.current);
-      }
-
-      if (streamRef.current) {
-
-        streamRef.current
-          .getTracks()
-          .forEach((track) => track.stop());
-
-      }
-
+      stopCameraInternal();
     };
-
   }, []);
-
 
   // =====================================================
   // SELECT IMAGE
   // =====================================================
 
   const handleFileChange = (event) => {
-
     const file = event.target.files[0];
 
     if (!file) return;
 
-
     if (!file.type.startsWith("image/")) {
-
       setError(
         "Please select a valid image."
       );
@@ -135,12 +120,9 @@ function App() {
       return;
     }
 
-
     const reader = new FileReader();
 
-
     reader.onload = () => {
-
       const imageData = reader.result;
 
       setPreview(imageData);
@@ -159,9 +141,7 @@ function App() {
         "fakeshield_type",
         file.type
       );
-
     };
-
 
     reader.readAsDataURL(file);
 
@@ -169,18 +149,14 @@ function App() {
     setResult(null);
     setError("");
 
-    // Same image can be selected again
     event.target.value = "";
-
   };
-
 
   // =====================================================
   // REMOVE IMAGE
   // =====================================================
 
   const handleRemoveImage = () => {
-
     setSelectedFile(null);
     setPreview(null);
     setResult(null);
@@ -197,18 +173,14 @@ function App() {
     localStorage.removeItem(
       "fakeshield_type"
     );
-
   };
-
 
   // =====================================================
   // ANALYZE IMAGE
   // =====================================================
 
   const handleAnalyze = async () => {
-
     if (!selectedFile) {
-
       setError(
         "Please select an image first."
       );
@@ -216,11 +188,9 @@ function App() {
       return;
     }
 
-
     setLoading(true);
     setResult(null);
     setError("");
-
 
     const formData = new FormData();
 
@@ -229,9 +199,7 @@ function App() {
       selectedFile
     );
 
-
     try {
-
       const response = await fetch(
         "http://127.0.0.1:8000/predict",
         {
@@ -240,186 +208,274 @@ function App() {
         }
       );
 
-
       const data =
         await response.json();
 
-
       if (!response.ok) {
-
         throw new Error(
           data.detail ||
           "Something went wrong."
         );
-
       }
 
-
       setResult(data);
-
     } catch (err) {
-
       setError(
         err.message ||
         "Could not connect to FakeShield backend."
       );
-
     } finally {
-
       setLoading(false);
-
     }
-
   };
-
 
   // =====================================================
   // RESULT HELPERS
   // =====================================================
 
   const getImageStats = () => {
-
     if (
       !result ||
       !result.predictions ||
       result.predictions.length === 0
     ) {
-
       return {
         overallResult: "UNKNOWN",
         averageConfidence: 0,
         flaggedFaces: 0,
       };
-
     }
-
 
     const predictions =
       result.predictions;
-
 
     const totalConfidence =
       predictions.reduce(
         (total, prediction) =>
           total +
-          Number(prediction.confidence || 0),
+          Number(
+            prediction.confidence || 0
+          ),
         0
       );
-
 
     const averageConfidence =
       totalConfidence /
       predictions.length;
 
-
     const flaggedFaces =
       predictions.filter(
         (prediction) =>
-          String(prediction.result).toUpperCase() ===
-          "FAKE"
+          String(
+            prediction.result
+          ).toUpperCase() === "FAKE"
       ).length;
-
 
     const realFaces =
       predictions.filter(
         (prediction) =>
-          String(prediction.result).toUpperCase() ===
-          "REAL"
+          String(
+            prediction.result
+          ).toUpperCase() === "REAL"
       ).length;
-
 
     let overallResult = "UNKNOWN";
 
-
     if (flaggedFaces > 0) {
-
       overallResult = "FAKE";
-
     } else if (realFaces > 0) {
-
       overallResult = "REAL";
-
     }
-
 
     return {
       overallResult,
       averageConfidence,
       flaggedFaces,
     };
-
   };
-
 
   const imageStats = getImageStats();
 
+  // =====================================================
+  // CLEAR CAMERA TIMER
+  // =====================================================
+
+  const clearCameraTimer = () => {
+    if (cameraTimerRef.current) {
+      clearTimeout(
+        cameraTimerRef.current
+      );
+
+      cameraTimerRef.current = null;
+    }
+  };
+
+  // =====================================================
+  // STOP CAMERA INTERNAL
+  // =====================================================
+
+  const stopCameraInternal = () => {
+    // Invalidate previous camera loop
+    cameraSessionRef.current += 1;
+
+    clearCameraTimer();
+
+    // Abort current backend request
+    if (cameraAbortRef.current) {
+      cameraAbortRef.current.abort();
+      cameraAbortRef.current = null;
+    }
+
+    // Stop camera tracks
+    if (streamRef.current) {
+      streamRef.current
+        .getTracks()
+        .forEach((track) => {
+          try {
+            track.stop();
+          } catch {
+            // Ignore already stopped tracks
+          }
+        });
+
+      streamRef.current = null;
+    }
+
+    // Reset video
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        // Ignore
+      }
+
+      videoRef.current.srcObject = null;
+    }
+
+    frameBusyRef.current = false;
+
+    analysisTimesRef.current = [];
+
+    document.body.style.overflow = "";
+  };
 
   // =====================================================
   // START CAMERA
   // =====================================================
 
   const startCamera = async () => {
+    // Prevent duplicate camera sessions
+    if (streamRef.current) {
+      return;
+    }
 
     try {
-
       setCameraError("");
       setCameraPredictions([]);
       setCameraFaces(0);
       setFps(0);
+      setCameraAnalyzing(false);
 
+      // New session ID
+      cameraSessionRef.current += 1;
+
+      const currentSession =
+        cameraSessionRef.current;
+
+      analysisTimesRef.current = [];
+      frameBusyRef.current = false;
 
       if (
         !navigator.mediaDevices ||
         !navigator.mediaDevices.getUserMedia
       ) {
-
         throw new Error(
           "Camera is not supported by this browser."
         );
-
       }
-
 
       const stream =
         await navigator.mediaDevices.getUserMedia({
-
           video: {
             facingMode: "user",
 
             width: {
-              ideal: 640
+              ideal: 640,
             },
 
             height: {
-              ideal: 480
-            }
+              ideal: 480,
+            },
+
+            frameRate: {
+              ideal: 30,
+              min: 24,
+            },
           },
 
-          audio: false
-
+          audio: false,
         });
 
+      // Check whether user stopped camera
+      // while permission dialog was open.
+      if (
+        currentSession !==
+        cameraSessionRef.current
+      ) {
+        stream
+          .getTracks()
+          .forEach((track) =>
+            track.stop()
+          );
+
+        return;
+      }
 
       streamRef.current = stream;
 
-
-      if (videoRef.current) {
-
-        videoRef.current.srcObject =
-          stream;
-
-        await videoRef.current.play();
-
-      }
-
-
       setCameraActive(true);
+      setShowCameraOverlay(true);
 
-      startFrameLoop();
+      // Camera overlay should not move page
+      document.body.style.overflow = "hidden";
 
+      // Attach stream after render
+      requestAnimationFrame(
+        async () => {
+          const video =
+            videoRef.current;
+
+          if (!video) return;
+
+          video.srcObject = stream;
+
+          try {
+            await video.play();
+          } catch (playError) {
+            console.error(
+              "Video play error:",
+              playError
+            );
+          }
+
+          if (
+            streamRef.current &&
+            currentSession ===
+              cameraSessionRef.current
+          ) {
+            startFrameLoop(
+              currentSession
+            );
+          }
+        }
+      );
     } catch (err) {
+      console.error(
+        "Camera start error:",
+        err
+      );
 
-      console.error(err);
+      stopCameraInternal();
 
       setCameraError(
         err.message ||
@@ -427,85 +483,112 @@ function App() {
       );
 
       setCameraActive(false);
-
+      setShowCameraOverlay(false);
+      setCameraAnalyzing(false);
     }
-
   };
-
 
   // =====================================================
   // STOP CAMERA
   // =====================================================
 
   const stopCamera = () => {
-
-    if (cameraTimerRef.current) {
-
-      clearTimeout(
-        cameraTimerRef.current
-      );
-
-      cameraTimerRef.current = null;
-
-    }
-
-
-    if (streamRef.current) {
-
-      streamRef.current
-        .getTracks()
-        .forEach((track) => {
-          track.stop();
-        });
-
-      streamRef.current = null;
-
-    }
-
-
-    if (videoRef.current) {
-
-      videoRef.current.srcObject = null;
-
-    }
-
-
-    frameBusyRef.current = false;
+    stopCameraInternal();
 
     setCameraActive(false);
+    setShowCameraOverlay(false);
+
     setCameraAnalyzing(false);
     setCameraPredictions([]);
     setCameraFaces(0);
     setFps(0);
-
   };
 
+  // =====================================================
+  // UPDATE REAL AI FPS
+  // =====================================================
+
+  const updateAnalysisFps = () => {
+    const now = performance.now();
+
+    analysisTimesRef.current.push(now);
+
+    // Keep only last 2 seconds
+    analysisTimesRef.current =
+      analysisTimesRef.current.filter(
+        (time) =>
+          now - time <= 2000
+      );
+
+    const times =
+      analysisTimesRef.current;
+
+    if (times.length <= 1) {
+      setFps(0);
+      return;
+    }
+
+    const firstTime = times[0];
+    const lastTime =
+      times[times.length - 1];
+
+    const elapsed =
+      lastTime - firstTime;
+
+    if (elapsed <= 0) {
+      return;
+    }
+
+    const actualFps =
+      (times.length - 1) /
+      (elapsed / 1000);
+
+    setFps(
+      Math.min(
+        10,
+        Math.round(
+          actualFps
+        )
+      )
+    );
+  };
 
   // =====================================================
   // CAMERA FRAME LOOP
   // =====================================================
 
-  const startFrameLoop = () => {
-
+  const startFrameLoop = (
+    sessionId
+  ) => {
     const processFrame = async () => {
+      // -------------------------------------------------
+      // SESSION VALIDATION
+      // -------------------------------------------------
+
+      if (
+        sessionId !==
+        cameraSessionRef.current
+      ) {
+        return;
+      }
 
       if (!streamRef.current) {
         return;
       }
 
+      // -------------------------------------------------
+      // PREVENT OVERLAPPING REQUESTS
+      // -------------------------------------------------
 
       if (frameBusyRef.current) {
-
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            150
+            AI_INTERVAL
           );
 
         return;
-
       }
-
 
       const video =
         videoRef.current;
@@ -513,30 +596,32 @@ function App() {
       const canvas =
         canvasRef.current;
 
-
       if (
         !video ||
         !canvas ||
         video.readyState < 2 ||
-        video.videoWidth === 0
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
       ) {
-
         cameraTimerRef.current =
           setTimeout(
             processFrame,
-            200
+            150
           );
 
         return;
-
       }
 
-
       frameBusyRef.current = true;
+
       setCameraAnalyzing(true);
 
+      let requestSucceeded = false;
 
       try {
+        // ------------------------------------------------
+        // VIDEO DIMENSIONS
+        // ------------------------------------------------
 
         const width =
           video.videoWidth;
@@ -544,23 +629,60 @@ function App() {
         const height =
           video.videoHeight;
 
+        // ------------------------------------------------
+        // LIMIT BACKEND IMAGE SIZE
+        // ------------------------------------------------
+        // This is important for performance.
+        // We don't need to send huge frames.
+        // The backend already resizes each face to 224x224.
 
-        canvas.width = width;
-        canvas.height = height;
+        const maxWidth = 640;
 
+        let captureWidth = width;
+        let captureHeight = height;
+
+        if (width > maxWidth) {
+          captureWidth = maxWidth;
+
+          captureHeight =
+            Math.round(
+              height *
+              (maxWidth / width)
+            );
+        }
+
+        canvas.width =
+          captureWidth;
+
+        canvas.height =
+          captureHeight;
 
         const context =
-          canvas.getContext("2d");
+          canvas.getContext("2d", {
+            willReadFrequently: false,
+          });
 
+        if (!context) {
+          throw new Error(
+            "Could not access camera canvas."
+          );
+        }
+
+        // ------------------------------------------------
+        // CAPTURE FRAME
+        // ------------------------------------------------
 
         context.drawImage(
           video,
           0,
           0,
-          width,
-          height
+          captureWidth,
+          captureHeight
         );
 
+        // ------------------------------------------------
+        // JPEG
+        // ------------------------------------------------
 
         const blob =
           await new Promise(
@@ -568,23 +690,22 @@ function App() {
               canvas.toBlob(
                 resolve,
                 "image/jpeg",
-                0.65
+                0.55
               )
           );
 
-
         if (!blob) {
-
           throw new Error(
             "Could not capture camera frame."
           );
-
         }
 
+        // ------------------------------------------------
+        // CREATE FORM DATA
+        // ------------------------------------------------
 
         const formData =
           new FormData();
-
 
         formData.append(
           "file",
@@ -592,10 +713,19 @@ function App() {
           "camera-frame.jpg"
         );
 
+        // ------------------------------------------------
+        // ABORT CONTROLLER
+        // ------------------------------------------------
 
-        const startTime =
-          performance.now();
+        const controller =
+          new AbortController();
 
+        cameraAbortRef.current =
+          controller;
+
+        // ------------------------------------------------
+        // BACKEND REQUEST
+        // ------------------------------------------------
 
         const response =
           await fetch(
@@ -603,110 +733,129 @@ function App() {
             {
               method: "POST",
               body: formData,
+              signal:
+                controller.signal,
             }
           );
-
 
         const data =
           await response.json();
 
+        // ------------------------------------------------
+        // SESSION VALIDATION
+        // ------------------------------------------------
+
+        if (
+          sessionId !==
+          cameraSessionRef.current
+        ) {
+          return;
+        }
 
         if (!response.ok) {
-
           throw new Error(
             data.detail ||
             "Camera analysis failed."
           );
-
         }
 
+        // ------------------------------------------------
+        // UPDATE RESULTS
+        // ------------------------------------------------
+
+        const predictions =
+          data.predictions || [];
 
         setCameraPredictions(
-          data.predictions || []
+          predictions
         );
-
 
         setCameraFaces(
-          data.faces_detected || 0
+          Number(
+            data.faces_detected || 0
+          )
         );
 
+        // ------------------------------------------------
+        // UPDATE ACTUAL AI FPS
+        // ------------------------------------------------
 
-        // =================================================
-        // FPS
-        // =================================================
+        updateAnalysisFps();
 
-        const endTime =
-          performance.now();
-
-
-        const processingTime =
-          endTime - startTime;
-
-
-        if (processingTime > 0) {
-
-          const currentFps =
-            Math.min(
-              30,
-              Math.round(
-                1000 /
-                processingTime
-              )
-            );
-
-
-          setFps(currentFps);
-
-        }
-
-
+        requestSucceeded = true;
       } catch (err) {
+        // Abort is expected when stopping camera
+        if (
+          err.name ===
+          "AbortError"
+        ) {
+          return;
+        }
 
         console.error(
           "Camera analysis error:",
           err
         );
 
-
-        setCameraError(
-          err.message ||
-          "Camera analysis failed."
-        );
-
+        if (
+          sessionId ===
+          cameraSessionRef.current
+        ) {
+          setCameraError(
+            err.message ||
+            "Camera analysis failed."
+          );
+        }
       } finally {
+        if (
+          cameraAbortRef.current
+        ) {
+          cameraAbortRef.current =
+            null;
+        }
 
-        frameBusyRef.current = false;
-        setCameraAnalyzing(false);
+        frameBusyRef.current =
+          false;
 
+        if (
+          sessionId ===
+            cameraSessionRef.current &&
+          streamRef.current
+        ) {
+          setCameraAnalyzing(
+            false
+          );
 
-        if (streamRef.current) {
+          // ------------------------------------------------
+          // NEXT AI FRAME
+          // ------------------------------------------------
+          //
+          // Camera itself stays smooth.
+          // Backend analysis runs at controlled rate.
+
+          const nextDelay =
+            requestSucceeded
+              ? AI_INTERVAL
+              : 500;
 
           cameraTimerRef.current =
             setTimeout(
               processFrame,
-              180
+              nextDelay
             );
-
         }
-
       }
-
     };
 
-
     processFrame();
-
   };
-
 
   // =====================================================
   // RENDER
   // =====================================================
 
   return (
-
     <div className="app">
-
 
       {/* =================================================
           NAVBAR
@@ -717,7 +866,6 @@ function App() {
         <div className="logo">
           FakeShield
         </div>
-
 
         <div className="status">
 
@@ -731,7 +879,6 @@ function App() {
 
 
       <main className="main-content">
-
 
         {/* =================================================
             HERO
@@ -749,7 +896,6 @@ function App() {
 
           </h1>
 
-
           <p>
             Upload an image or use your camera
             to detect deepfakes using AI.
@@ -766,7 +912,6 @@ function App() {
 
           <div className="upload-area">
 
-
             {preview ? (
 
               <div className="preview-container">
@@ -777,11 +922,12 @@ function App() {
                   className="preview-image"
                 />
 
-
                 <button
                   type="button"
                   className="remove-image-button"
-                  onClick={handleRemoveImage}
+                  onClick={
+                    handleRemoveImage
+                  }
                   aria-label="Remove image"
                   title="Remove image"
                 >
@@ -798,11 +944,9 @@ function App() {
                   +
                 </div>
 
-
                 <h2>
                   Upload an image
                 </h2>
-
 
                 <p>
                   Select an image containing
@@ -818,7 +962,9 @@ function App() {
               type="file"
               accept="image/*"
               id="image-upload"
-              onChange={handleFileChange}
+              onChange={
+                handleFileChange
+              }
               hidden
             />
 
@@ -866,464 +1012,12 @@ function App() {
 
 
         {/* =================================================
-            CAMERA SECTION
-            ================================================= */}
-
-        <section
-          className="upload-card"
-          style={{
-            marginTop: "28px"
-          }}
-        >
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "20px",
-              marginBottom: "20px",
-              flexWrap: "wrap"
-            }}
-          >
-
-            <div>
-
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "26px",
-                  fontWeight: 800
-                }}
-              >
-                Live Camera Detection
-              </h2>
-
-
-              <p
-                style={{
-                  marginTop: "8px",
-                  color: "#8290aa",
-                  fontSize: "14px"
-                }}
-              >
-                Detect multiple faces in real time.
-              </p>
-
-            </div>
-
-
-            {cameraActive && (
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px"
-                }}
-              >
-
-                <span
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "7px",
-                    color: "#35e890",
-                    fontSize: "13px",
-                    fontWeight: 700
-                  }}
-                >
-
-                  <span
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      borderRadius: "50%",
-                      background: "#35e890",
-                      boxShadow:
-                        "0 0 12px rgba(53,232,144,.8)"
-                    }}
-                  />
-
-                  CAMERA LIVE
-
-                </span>
-
-
-                <span
-                  style={{
-                    color: "#9aa8c2",
-                    fontSize: "13px",
-                    fontWeight: 700
-                  }}
-                >
-                  {fps} FPS
-                </span>
-
-              </div>
-
-            )}
-
-          </div>
-
-
-          {/* CAMERA VIEW */}
-
-          <div
-            style={{
-              position: "relative",
-              width: "100%",
-              aspectRatio: "16 / 9",
-              minHeight: "300px",
-              overflow: "hidden",
-              borderRadius: "22px",
-              background:
-                "rgba(4,8,18,.9)",
-              border:
-                "1px solid rgba(120,155,220,.16)"
-            }}
-          >
-
-            <video
-              ref={videoRef}
-              muted
-              playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                display:
-                  cameraActive
-                    ? "block"
-                    : "none",
-                transform: "scaleX(-1)"
-              }}
-            />
-
-
-            {!cameraActive && (
-
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textAlign: "center",
-                  padding: "30px"
-                }}
-              >
-
-                <div
-                  style={{
-                    fontSize: "48px",
-                    marginBottom: "14px"
-                  }}
-                >
-                  ◉
-                </div>
-
-
-                <h3
-                  style={{
-                    fontSize: "20px",
-                    marginBottom: "8px"
-                  }}
-                >
-                  Camera is ready
-                </h3>
-
-
-                <p
-                  style={{
-                    color: "#8290aa",
-                    fontSize: "14px"
-                  }}
-                >
-                  Start your camera to begin
-                  real-time detection.
-                </p>
-
-              </div>
-
-            )}
-
-
-            {/* FACE BOXES */}
-
-            {cameraActive &&
-              cameraPredictions.map(
-                (prediction, index) => {
-
-                  const box =
-                    prediction.bounding_box;
-
-                  if (!box) return null;
-
-
-                  const video =
-                    videoRef.current;
-
-                  if (!video) return null;
-
-
-                  const videoWidth =
-                    video.videoWidth || 640;
-
-                  const videoHeight =
-                    video.videoHeight || 480;
-
-
-                  const left =
-                    (box.x / videoWidth) *
-                    100;
-
-                  const top =
-                    (box.y / videoHeight) *
-                    100;
-
-                  const width =
-                    (box.width / videoWidth) *
-                    100;
-
-                  const height =
-                    (box.height / videoHeight) *
-                    100;
-
-
-                  const isFake =
-                    String(prediction.result)
-                      .toUpperCase() ===
-                    "FAKE";
-
-
-                  return (
-
-                    <div
-                      key={`${prediction.face}-${index}`}
-                      style={{
-                        position: "absolute",
-
-                        left:
-                          `${100 - left - width}%`,
-
-                        top:
-                          `${top}%`,
-
-                        width:
-                          `${width}%`,
-
-                        height:
-                          `${height}%`,
-
-                        border:
-                          `2px solid ${
-                            isFake
-                              ? "#ff5470"
-                              : "#35e890"
-                          }`,
-
-                        borderRadius: "10px",
-
-                        boxShadow:
-                          isFake
-                            ? "0 0 18px rgba(255,84,112,.45)"
-                            : "0 0 18px rgba(53,232,144,.35)",
-
-                        pointerEvents: "none"
-                      }}
-                    >
-
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: "-34px",
-                          left: "0",
-
-                          padding:
-                            "6px 10px",
-
-                          borderRadius:
-                            "8px",
-
-                          background:
-                            isFake
-                              ? "rgba(255,84,112,.92)"
-                              : "rgba(53,232,144,.92)",
-
-                          color: "#04100a",
-
-                          fontSize: "12px",
-                          fontWeight: 800,
-
-                          whiteSpace: "nowrap"
-                        }}
-                      >
-
-                        Face {prediction.face}
-                        {" · "}
-                        {prediction.result}
-                        {" · "}
-                        {prediction.confidence}%
-
-                      </div>
-
-                    </div>
-
-                  );
-
-                }
-              )}
-
-          </div>
-
-
-          {/* CAMERA CONTROLS */}
-
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              marginTop: "18px",
-              flexWrap: "wrap"
-            }}
-          >
-
-            {!cameraActive ? (
-
-              <button
-                type="button"
-                className="analyze-button"
-                style={{
-                  marginTop: 0,
-                  flex: 1
-                }}
-                onClick={startCamera}
-              >
-                Start Camera
-              </button>
-
-            ) : (
-
-              <button
-                type="button"
-                className="analyze-button"
-                style={{
-                  marginTop: 0,
-                  flex: 1,
-                  background:
-                    "linear-gradient(100deg,#ff405f,#ff687d)"
-                }}
-                onClick={stopCamera}
-              >
-                Stop Camera
-              </button>
-
-            )}
-
-          </div>
-
-
-          {/* CAMERA STATUS */}
-
-          {cameraActive && (
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns:
-                  "repeat(auto-fit,minmax(150px,1fr))",
-                gap: "12px",
-                marginTop: "16px"
-              }}
-            >
-
-              <div
-                className="result-item"
-                style={{
-                  minHeight: "70px"
-                }}
-              >
-
-                <div>
-
-                  <span>
-                    Faces Detected
-                  </span>
-
-                  <strong>
-                    {cameraFaces}
-                  </strong>
-
-                </div>
-
-              </div>
-
-
-              <div
-                className="result-item"
-                style={{
-                  minHeight: "70px"
-                }}
-              >
-
-                <div>
-
-                  <span>
-                    Analysis
-                  </span>
-
-                  <strong
-                    style={{
-                      color:
-                        cameraAnalyzing
-                          ? "#68a7ff"
-                          : "#35e890"
-                    }}
-                  >
-                    {cameraAnalyzing
-                      ? "Scanning"
-                      : "Ready"}
-                  </strong>
-
-                </div>
-
-              </div>
-
-            </div>
-
-          )}
-
-
-          {cameraError && (
-
-            <div className="error-box">
-              {cameraError}
-            </div>
-
-          )}
-
-
-          <canvas
-            ref={canvasRef}
-            style={{
-              display: "none"
-            }}
-          />
-
-        </section>
-
-
-        {/* =================================================
             IMAGE RESULT
             ================================================= */}
 
         {result && (
 
           <section className="result-card">
-
 
             {/* RESULT HEADER */}
 
@@ -1344,9 +1038,11 @@ function App() {
 
               <div
                 className={`overall-result ${
-                  imageStats.overallResult === "FAKE"
+                  imageStats.overallResult ===
+                  "FAKE"
                     ? "fake"
-                    : imageStats.overallResult === "REAL"
+                    : imageStats.overallResult ===
+                      "REAL"
                       ? "real"
                       : ""
                 }`}
@@ -1361,7 +1057,6 @@ function App() {
 
             <div className="analysis-summary">
 
-
               <div className="summary-card">
 
                 <span>
@@ -1369,7 +1064,8 @@ function App() {
                 </span>
 
                 <strong>
-                  {result.faces_detected || 0}
+                  {result.faces_detected ||
+                    0}
                 </strong>
 
               </div>
@@ -1382,7 +1078,10 @@ function App() {
                 </span>
 
                 <strong>
-                  {imageStats.averageConfidence.toFixed(2)}%
+                  {imageStats.averageConfidence.toFixed(
+                    2
+                  )}
+                  %
                 </strong>
 
               </div>
@@ -1396,7 +1095,8 @@ function App() {
 
                 <strong
                   className={
-                    imageStats.flaggedFaces > 0
+                    imageStats.flaggedFaces >
+                    0
                       ? "fake"
                       : "real"
                   }
@@ -1405,7 +1105,6 @@ function App() {
                 </strong>
 
               </div>
-
 
             </div>
 
@@ -1429,7 +1128,9 @@ function App() {
                 </div>
 
                 <span className="face-count">
-                  {result.predictions?.length || 0} Faces
+                  {result.predictions
+                    ?.length || 0}{" "}
+                  Faces
                 </span>
 
               </div>
@@ -1439,13 +1140,16 @@ function App() {
 
                 {result.predictions &&
                   result.predictions.map(
-                    (prediction, index) => {
+                    (
+                      prediction,
+                      index
+                    ) => {
 
                       const isFake =
-                        String(prediction.result)
-                          .toUpperCase() ===
+                        String(
+                          prediction.result
+                        ).toUpperCase() ===
                         "FAKE";
-
 
                       return (
 
@@ -1455,14 +1159,17 @@ function App() {
                         >
 
                           <div className="face-number">
-                            {prediction.face || index + 1}
+                            {prediction.face ||
+                              index + 1}
                           </div>
 
 
                           <div className="face-result-main">
 
                             <span className="face-label">
-                              Face {prediction.face || index + 1}
+                              Face{" "}
+                              {prediction.face ||
+                                index + 1}
                             </span>
 
 
@@ -1473,7 +1180,9 @@ function App() {
                                   : "real"
                               }
                             >
-                              {prediction.result}
+                              {
+                                prediction.result
+                              }
                             </strong>
 
                           </div>
@@ -1486,7 +1195,10 @@ function App() {
                             </span>
 
                             <strong>
-                              {prediction.confidence}%
+                              {
+                                prediction.confidence
+                              }
+                              %
                             </strong>
 
                           </div>
@@ -1519,10 +1231,337 @@ function App() {
 
       </main>
 
+
+      {/* =================================================
+          FLOATING CAMERA BUTTON
+          ================================================= */}
+
+      {!showCameraOverlay && (
+
+        <button
+          type="button"
+          className="floating-camera-btn"
+          onClick={startCamera}
+        >
+
+          <span className="camera-button-icon">
+            ◉
+          </span>
+
+          <span>
+            Live Camera
+          </span>
+
+        </button>
+
+      )}
+
+
+      {/* =================================================
+          CAMERA OVERLAY
+          ================================================= */}
+
+      {showCameraOverlay && (
+
+        <div className="camera-overlay">
+
+          <div className="camera-overlay-card">
+
+            {/* CAMERA HEADER */}
+
+            <div className="camera-overlay-header">
+
+              <div>
+
+                <div className="camera-title-row">
+
+                  <span className="camera-live-dot"></span>
+
+                  <span className="camera-live-text">
+                    LIVE DETECTION
+                  </span>
+
+                </div>
+
+
+                <h2>
+                  Live Camera Detection
+                </h2>
+
+
+                <p>
+                  Real-time AI deepfake detection
+                </p>
+
+              </div>
+
+
+              <button
+                type="button"
+                className="camera-close-btn"
+                onClick={stopCamera}
+                aria-label="Close camera"
+                title="Close camera"
+              >
+                ×
+              </button>
+
+            </div>
+
+
+            {/* CAMERA VIDEO */}
+
+            <div className="camera-video-wrapper">
+
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="camera-video"
+              />
+
+
+              {/* CAMERA SCAN EFFECT */}
+
+              {cameraAnalyzing && (
+                <div className="camera-scan-line"></div>
+              )}
+
+
+              {/* CORNERS */}
+
+              <div className="camera-corner camera-corner-tl"></div>
+
+              <div className="camera-corner camera-corner-tr"></div>
+
+              <div className="camera-corner camera-corner-bl"></div>
+
+              <div className="camera-corner camera-corner-br"></div>
+
+
+              {/* FACE BOXES */}
+
+              {cameraActive &&
+                cameraPredictions.map(
+                  (
+                    prediction,
+                    index
+                  ) => {
+
+                    const box =
+                      prediction.bounding_box;
+
+                    if (!box) {
+                      return null;
+                    }
+
+                    const video =
+                      videoRef.current;
+
+                    if (!video) {
+                      return null;
+                    }
+
+                    const videoWidth =
+                      video.videoWidth ||
+                      640;
+
+                    const videoHeight =
+                      video.videoHeight ||
+                      480;
+
+                    const left =
+                      (box.x /
+                        videoWidth) *
+                      100;
+
+                    const top =
+                      (box.y /
+                        videoHeight) *
+                      100;
+
+                    const width =
+                      (box.width /
+                        videoWidth) *
+                      100;
+
+                    const height =
+                      (box.height /
+                        videoHeight) *
+                      100;
+
+                    const isFake =
+                      String(
+                        prediction.result
+                      ).toUpperCase() ===
+                      "FAKE";
+
+                    /*
+                     * Camera is normally displayed
+                     * like a selfie mirror.
+                     *
+                     * Therefore horizontal
+                     * coordinate is mirrored.
+                     */
+
+                    const mirroredLeft =
+                      100 -
+                      left -
+                      width;
+
+                    return (
+
+                      <div
+                        key={`${prediction.face}-${index}`}
+                        className={`camera-face-box ${
+                          isFake
+                            ? "fake"
+                            : "real"
+                        }`}
+                        style={{
+                          left: `${mirroredLeft}%`,
+                          top: `${top}%`,
+                          width: `${width}%`,
+                          height: `${height}%`,
+                        }}
+                      >
+
+                        <div className="camera-face-label">
+
+                          Face{" "}
+                          {prediction.face}
+
+                          {" · "}
+
+                          {
+                            prediction.result
+                          }
+
+                          {" · "}
+
+                          {
+                            prediction.confidence
+                          }
+                          %
+
+                        </div>
+
+                      </div>
+
+                    );
+                  }
+                )}
+
+
+              {/* NO FACE MESSAGE */}
+
+              {cameraActive &&
+                cameraFaces === 0 && (
+
+                  <div className="camera-no-face">
+                    No face detected
+                  </div>
+
+                )}
+
+            </div>
+
+
+            {/* CAMERA STATS */}
+
+            <div className="camera-overlay-footer">
+
+              <div className="camera-stat">
+
+                <span>
+                  FACES DETECTED
+                </span>
+
+                <strong>
+                  {cameraFaces}
+                </strong>
+
+              </div>
+
+
+              <div className="camera-stat">
+
+                <span>
+                  AI PROCESSING
+                </span>
+
+                <strong>
+                  {fps > 0
+                    ? `${fps} FPS`
+                    : "WAITING"}
+                </strong>
+
+              </div>
+
+
+              <div className="camera-stat">
+
+                <span>
+                  AI STATUS
+                </span>
+
+                <strong
+                  className={
+                    cameraAnalyzing
+                      ? "camera-scanning"
+                      : "camera-ready"
+                  }
+                >
+                  {cameraAnalyzing
+                    ? "SCANNING"
+                    : "READY"}
+                </strong>
+
+              </div>
+
+            </div>
+
+
+            {/* CAMERA ERROR */}
+
+            {cameraError && (
+
+              <div className="error-box">
+                {cameraError}
+              </div>
+
+            )}
+
+
+            {/* STOP BUTTON */}
+
+            <button
+              type="button"
+              className="camera-stop-button"
+              onClick={stopCamera}
+            >
+              Stop Camera
+            </button>
+
+
+            {/* HIDDEN CANVAS */}
+
+            <canvas
+              ref={canvasRef}
+              style={{
+                display: "none",
+              }}
+            />
+
+          </div>
+
+        </div>
+
+      )}
+
     </div>
-
   );
-
 }
 
 export default App;
