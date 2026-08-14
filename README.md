@@ -5,6 +5,7 @@ FakeShield is a state-of-the-art deepfake detection application built for real-t
 ---
 
 ## 📁 Project Structure
+## project
 
 ```
 FakeShield/
