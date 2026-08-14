@@ -6,6 +6,8 @@ from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 
+import io
+from PIL import Image, ImageOps
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -85,13 +87,22 @@ face_detector_options = vision.FaceDetectorOptions(
 
     running_mode=vision.RunningMode.IMAGE,
 
-    min_detection_confidence=0.35
+    min_detection_confidence=0.20
 )
 
 
 face_detector = vision.FaceDetector.create_from_options(
     face_detector_options
 )
+
+# Secondary Haar cascade detector as fallback
+haar_face_cascade = None
+try:
+    haar_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    if os.path.exists(haar_path):
+        haar_face_cascade = cv2.CascadeClassifier(haar_path)
+except Exception as haar_init_err:
+    print("Could not load Haar cascade fallback:", haar_init_err)
 
 
 # =========================================================
@@ -188,24 +199,30 @@ async def read_uploaded_image(
 
 
     # -----------------------------------------------------
-    # Convert bytes -> numpy
+    # Convert bytes -> PIL (with EXIF auto-orientation) -> OpenCV BGR
     # -----------------------------------------------------
 
-    image_array = np.frombuffer(
-        image_bytes,
-        dtype=np.uint8
-    )
+    try:
+        pil_image = Image.open(io.BytesIO(image_bytes))
+        pil_image = ImageOps.exif_transpose(pil_image)
 
+        if pil_image.mode != "RGB":
+            pil_image = pil_image.convert("RGB")
 
-    # -----------------------------------------------------
-    # Decode image
-    # -----------------------------------------------------
+        frame = cv2.cvtColor(
+            np.array(pil_image),
+            cv2.COLOR_RGB2BGR
+        )
+    except Exception:
+        image_array = np.frombuffer(
+            image_bytes,
+            dtype=np.uint8
+        )
 
-    frame = cv2.imdecode(
-        image_array,
-        cv2.IMREAD_COLOR
-    )
-
+        frame = cv2.imdecode(
+            image_array,
+            cv2.IMREAD_COLOR
+        )
 
     if frame is None:
 
@@ -217,7 +234,6 @@ async def read_uploaded_image(
             )
         )
 
-
     return frame
 
 
@@ -225,10 +241,11 @@ async def read_uploaded_image(
 # HELPER: ANALYZE FRAME
 # =========================================================
 
-def analyze_frame(frame):
+def analyze_frame(frame, allow_fallback=False):
     """
-    Detect all faces in an OpenCV BGR frame
-    and run deepfake prediction on every usable face.
+    Detect all faces in an OpenCV BGR frame and run deepfake prediction.
+    If MediaPipe detects no faces, tries OpenCV Haar Cascade fallback.
+    If still no faces detected and allow_fallback is True, analyzes the full frame.
     """
 
     if frame is None:
@@ -265,38 +282,24 @@ def analyze_frame(frame):
 
 
     # -----------------------------------------------------
-    # MediaPipe face detection
+    # 1. MediaPipe face detection
     # -----------------------------------------------------
 
-    with detector_lock:
+    detections = []
+    try:
+        with detector_lock:
+            result = face_detector.detect(
+                mp_image
+            )
+            detections = result.detections or []
+    except Exception as mp_err:
+        print("MediaPipe detection error:", mp_err)
 
-        result = face_detector.detect(
-            mp_image
-        )
+    boxes = []
 
-
-    detections = result.detections or []
-
-    predictions = []
-
-
-    # =====================================================
-    # PROCESS EVERY DETECTED FACE
-    # =====================================================
-
-    for face_index, detection in enumerate(
-        detections,
-        start=1
-    ):
-
-        try:
-
+    if detections:
+        for detection in detections:
             bbox = detection.bounding_box
-
-
-            # -------------------------------------------------
-            # Bounding box
-            # -------------------------------------------------
 
             x1 = max(
                 0,
@@ -324,36 +327,48 @@ def analyze_frame(frame):
                 )
             )
 
+            if x2 > x1 and y2 > y1:
+                boxes.append((x1, y1, x2 - x1, y2 - y1))
 
-            # -------------------------------------------------
-            # Validate bounding box
-            # -------------------------------------------------
+    # -----------------------------------------------------
+    # 2. Haar Cascade fallback if MediaPipe found no faces
+    # -----------------------------------------------------
 
-            if x2 <= x1 or y2 <= y1:
+    if not boxes and haar_face_cascade is not None:
+        try:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            haar_faces = haar_face_cascade.detectMultiScale(
+                gray,
+                scaleFactor=1.1,
+                minNeighbors=3,
+                minSize=(20, 20)
+            )
+            for (hx, hy, hw, hh) in haar_faces:
+                boxes.append((int(hx), int(hy), int(hw), int(hh)))
+        except Exception as haar_err:
+            print("Haar cascade fallback error:", haar_err)
 
-                print(
-                    f"Face {face_index}: invalid bounding box."
-                )
+    predictions = []
 
+
+    # =====================================================
+    # PROCESS EVERY DETECTED FACE
+    # =====================================================
+
+    for face_index, (bx, by, bw, bh) in enumerate(
+        boxes,
+        start=1
+    ):
+
+        try:
+
+            if bw < 16 or bh < 16:
                 continue
 
-
-            face_width = x2 - x1
-            face_height = y2 - y1
-
-
-            # -------------------------------------------------
-            # Ignore extremely small faces
-            # -------------------------------------------------
-
-            if face_width < 20 or face_height < 20:
-
-                print(
-                    f"Face {face_index}: face too small."
-                )
-
-                continue
-
+            x1 = max(0, bx)
+            y1 = max(0, by)
+            x2 = min(frame_width, bx + bw)
+            y2 = min(frame_height, by + bh)
 
             # -------------------------------------------------
             # Crop face
@@ -385,8 +400,6 @@ def analyze_frame(frame):
             # Deepfake prediction
             # -------------------------------------------------
 
-            # Protect shared prediction model.
-
             with prediction_lock:
 
                 label, confidence = predict_face(
@@ -399,9 +412,6 @@ def analyze_frame(frame):
             # -------------------------------------------------
 
             confidence = float(confidence)
-
-            # If model returns 0-1 convert to percentage.
-            # If model already returns 0-100 keep it.
 
             if confidence <= 1:
 
@@ -444,9 +454,9 @@ def analyze_frame(frame):
 
                     "y": y1,
 
-                    "width": face_width,
+                    "width": x2 - x1,
 
-                    "height": face_height
+                    "height": y2 - y1
 
                 }
 
@@ -462,6 +472,47 @@ def analyze_frame(frame):
 
             continue
 
+
+    # -----------------------------------------------------
+    # 3. Full Frame Fallback if no individual faces found
+    # -----------------------------------------------------
+
+    if not predictions and allow_fallback:
+        try:
+            with prediction_lock:
+                label, confidence = predict_face(
+                    frame
+                )
+
+            confidence_percentage = float(confidence)
+
+            if confidence_percentage <= 1:
+                confidence_percentage *= 100
+
+            confidence_percentage = max(
+                0,
+                min(
+                    100,
+                    confidence_percentage
+                )
+            )
+
+            predictions.append({
+                "face": 1,
+                "result": str(label).upper(),
+                "confidence": round(
+                    confidence_percentage,
+                    2
+                ),
+                "bounding_box": {
+                    "x": 0,
+                    "y": 0,
+                    "width": frame_width,
+                    "height": frame_height
+                }
+            })
+        except Exception as full_err:
+            print("Full image fallback error:", full_err)
 
     return predictions
 
@@ -526,11 +577,12 @@ async def predict_image(
 
 
         # -------------------------------------------------
-        # Analyze
+        # Analyze (with full-image fallback)
         # -------------------------------------------------
 
         predictions = analyze_frame(
-            frame
+            frame,
+            allow_fallback=True
         )
 
 
@@ -623,11 +675,12 @@ async def predict_camera_frame(
 
 
         # -------------------------------------------------
-        # Analyze frame
+        # Analyze frame (no full-frame fallback for live cam)
         # -------------------------------------------------
 
         predictions = analyze_frame(
-            frame
+            frame,
+            allow_fallback=False
         )
 
 
