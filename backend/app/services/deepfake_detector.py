@@ -176,13 +176,37 @@ def analyze_eye_openness(face_crop: np.ndarray):
 # 3. LIVE CAMERA MOBILE SCREEN / REPLAY ATTACK DETECTOR
 # =========================================================
 
+try:
+    from ultralytics import YOLO
+    ULTRALYTICS_AVAILABLE = True
+except Exception:
+    ULTRALYTICS_AVAILABLE = False
+
+_yolo_model = None
+_yolo_failed = False
+
+
+def get_yolo_model():
+    global _yolo_model, _yolo_failed
+    if not ULTRALYTICS_AVAILABLE or _yolo_failed:
+        return None
+    if _yolo_model is None:
+        try:
+            _yolo_model = YOLO("yolov8n.pt")
+        except Exception:
+            _yolo_failed = True
+            _yolo_model = None
+    return _yolo_model
+
+
 def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = None):
     """
     Detects if the face in live camera is being replayed from a mobile phone screen / digital display.
     Markers:
-    1. 2D FFT Moiré subpixel interference patterns from phone LCD/OLED display.
-    2. Digital screen specular glass glare & emissive backlight saturation.
-    3. Rectangular mobile phone bezel / screen edge borders.
+    1. Ultralytics YOLO Mobile Phone Object Detection.
+    2. 2D FFT Moiré subpixel interference patterns from phone LCD/OLED display.
+    3. Digital screen specular glass glare & emissive backlight saturation.
+    4. Rectangular mobile phone bezel / screen edge borders.
     """
     if face_crop is None or face_crop.size == 0:
         return False, 0.0, []
@@ -191,12 +215,30 @@ def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = N
     spoof_score = 0.0
 
     try:
+        # 1. Ultralytics YOLO Cell Phone Detection in Camera Frame
+        yolo = get_yolo_model()
+        if yolo is not None and full_frame is not None and full_frame.size > 0:
+            try:
+                yolo_results = yolo(full_frame, verbose=False)
+                for r in yolo_results:
+                    for b in r.boxes:
+                        cls_id = int(b.cls[0].item())
+                        conf = float(b.conf[0].item())
+                        # COCO class 67 is 'cell phone'
+                        if cls_id == 67 and conf > 0.35:
+                            spoof_score += 0.85
+                            signals.append("Mobile phone device holding face detected by YOLO (Screen Replay Spoof)")
+                            break
+            except Exception:
+                pass
+
         gray = cv2.cvtColor(face_crop, cv2.COLOR_BGR2GRAY) if len(face_crop.shape) == 3 else face_crop
         h, w = gray.shape
         if h < 48 or w < 48:
-            return False, 0.0, []
+            is_spoof = spoof_score >= 0.65
+            return is_spoof, spoof_score, signals
 
-        # 1. 2D FFT Moiré Pattern Analysis
+        # 2. 2D FFT Moiré Pattern Analysis
         gray_resized = cv2.resize(gray, (128, 128))
         f = np.fft.fft2(gray_resized)
         fshift = np.fft.fftshift(f)
@@ -220,7 +262,7 @@ def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = N
             elif peak_z > 3.7:
                 spoof_score += 0.40
 
-        # 2. Specular Screen Reflection & Emissive Saturation
+        # 3. Specular Screen Reflection & Emissive Saturation
         if len(face_crop.shape) == 3:
             hsv = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
             v_chan = hsv[:, :, 2]
@@ -232,7 +274,7 @@ def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = N
                 spoof_score += 0.45
                 signals.append("Digital screen specular glare / glass reflection detected")
 
-        # 3. Mobile Phone Screen Bezel Detection (if full frame available)
+        # 4. Mobile Phone Screen Bezel Detection (if full frame available)
         if full_frame is not None and full_frame.size > 0:
             ff_gray = cv2.cvtColor(full_frame, cv2.COLOR_BGR2GRAY) if len(full_frame.shape) == 3 else full_frame
             edges = cv2.Canny(ff_gray, 80, 200)

@@ -7,5 +7,4 @@ mediapipe>=0.10.0
 pillow>=9.5.0
 torch>=2.0.0
 transformers>=4.30.0
-
-
+ultralytics>=8.0.0
