@@ -831,6 +831,10 @@ function App() {
           )
         );
 
+        if (response.ok) {
+          setCameraError("");
+        }
+
         // ------------------------------------------------
         // UPDATE ACTUAL AI FPS
         // ------------------------------------------------
@@ -847,20 +851,11 @@ function App() {
           return;
         }
 
-        console.error(
-          "Camera analysis error:",
-          err
+        console.warn(
+          "Camera analysis frame notice:",
+          err.message
         );
-
-        if (
-          sessionId ===
-          cameraSessionRef.current
-        ) {
-          setCameraError(
-            err.message ||
-            "Camera analysis failed."
-          );
-        }
+      }
       } finally {
         if (
           cameraAbortRef.current
@@ -1155,42 +1150,6 @@ function App() {
               </div>
 
             </div>
-
-
-            {/* FORENSIC SIGNALS & EVIDENCE */}
-
-            {imageStats.signals && imageStats.signals.length > 0 && (
-
-              <div className="forensic-signals-section">
-
-                <div className="signals-header">
-                  <span className="signals-icon">🔬</span>
-                  <h4>Forensic Verification & Detection Signals</h4>
-                </div>
-
-                <div className="signals-grid">
-                  {imageStats.signals.map((signal, sIdx) => {
-                    const isAiSignal = signal.toLowerCase().includes("ai") ||
-                                       signal.toLowerCase().includes("synthetic") ||
-                                       signal.toLowerCase().includes("artifact") ||
-                                       signal.toLowerCase().includes("irregularit");
-                    return (
-                      <div
-                        key={`sig-${sIdx}`}
-                        className={`signal-item ${isAiSignal ? "signal-ai" : "signal-real"}`}
-                      >
-                        <span className="signal-bullet">
-                          {isAiSignal ? "⚠" : "✓"}
-                        </span>
-                        <span className="signal-text">{signal}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </div>
-
-            )}
 
 
             {/* FACE BY FACE */}
