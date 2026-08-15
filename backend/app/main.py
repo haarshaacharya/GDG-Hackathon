@@ -64,9 +64,21 @@ if not MODEL_PATH.exists():
 
 
 # =========================================================
-# SHARED MEDIAPIPE DETECTOR
+# SHARED MEDIAPIPE & OPENCV DETECTORS
 # =========================================================
 
+# 1. MediaPipe Solutions Face Detector (pure CPU, no EGL required)
+mp_face_detector = None
+try:
+    mp_face_detector = mp.solutions.face_detection.FaceDetection(
+        min_detection_confidence=0.20,
+        model_selection=0
+    )
+    print("✅ MediaPipe Solutions FaceDetection initialized.")
+except Exception as mp_sol_init_err:
+    print(f"MediaPipe solutions init note: {mp_sol_init_err}")
+
+# 2. MediaPipe Vision Tasks (if available)
 face_detector = None
 try:
     base_options = python.BaseOptions(
@@ -82,12 +94,12 @@ try:
     face_detector = vision.FaceDetector.create_from_options(
         face_detector_options
     )
-    print("✅ MediaPipe FaceDetector initialized successfully.")
+    print("✅ MediaPipe Vision FaceDetector initialized successfully.")
 except Exception as mp_init_err:
-    print(f"⚠️ MediaPipe FaceDetector init note: {mp_init_err}. Using OpenCV Cascades.")
+    print(f"MediaPipe FaceDetector init note: {mp_init_err}")
     face_detector = None
 
-# Secondary Haar cascade detectors as fallback
+# 3. Secondary Haar cascade detectors as fallback
 haar_cascades = []
 for cascade_name in [
     "haarcascade_frontalface_default.xml",
@@ -252,49 +264,56 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False, is_live_
     # -----------------------------------------------------
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-    mp_image = mp.Image(
-        image_format=mp.ImageFormat.SRGB,
-        data=rgb_frame
-    )
-
-    # -----------------------------------------------------
-    # 1. MediaPipe face detection
-    # -----------------------------------------------------
-    detections = []
-    if face_detector is not None:
-        try:
-            with detector_lock:
-                result = face_detector.detect(mp_image)
-                detections = result.detections or []
-        except Exception as mp_err:
-            print("MediaPipe detection error:", mp_err)
-
     boxes = []
 
-    if detections:
-        for detection in detections:
-            bbox = detection.bounding_box
+    # 1. MediaPipe Solutions Face Detector (EGL-free, runs on all CPUs)
+    if mp_face_detector is not None:
+        try:
+            with detector_lock:
+                mp_res = mp_face_detector.process(rgb_frame)
+                if mp_res and mp_res.detections:
+                    for d in mp_res.detections:
+                        bboxC = d.location_data.relative_bounding_box
+                        bx = max(0, int(bboxC.xmin * frame_width))
+                        by = max(0, int(bboxC.ymin * frame_height))
+                        bw = min(frame_width - bx, int(bboxC.width * frame_width))
+                        bh = min(frame_height - by, int(bboxC.height * frame_height))
+                        if bw >= 20 and bh >= 20:
+                            boxes.append((bx, by, bw, bh))
+        except Exception as mp_sol_err:
+            print("MediaPipe solutions detection error:", mp_sol_err)
 
-            x1 = max(0, int(bbox.origin_x))
-            y1 = max(0, int(bbox.origin_y))
-            x2 = min(frame_width, int(bbox.origin_x + bbox.width))
-            y2 = min(frame_height, int(bbox.origin_y + bbox.height))
+    # 2. MediaPipe Vision Tasks (secondary)
+    if not boxes and face_detector is not None:
+        try:
+            with detector_lock:
+                mp_image = mp.Image(
+                    image_format=mp.ImageFormat.SRGB,
+                    data=rgb_frame
+                )
+                result = face_detector.detect(mp_image)
+                if result and result.detections:
+                    for detection in result.detections:
+                        bbox = detection.bounding_box
+                        x1 = max(0, int(bbox.origin_x))
+                        y1 = max(0, int(bbox.origin_y))
+                        x2 = min(frame_width, int(bbox.origin_x + bbox.width))
+                        y2 = min(frame_height, int(bbox.origin_y + bbox.height))
+                        if x2 > x1 and y2 > y1:
+                            boxes.append((x1, y1, x2 - x1, y2 - y1))
+        except Exception as mp_err:
+            print("MediaPipe vision detection error:", mp_err)
 
-            if x2 > x1 and y2 > y1:
-                boxes.append((x1, y1, x2 - x1, y2 - y1))
-
-    # -----------------------------------------------------
-    # 2. Haar Cascade fallback if MediaPipe found no faces
-    # -----------------------------------------------------
+    # 3. OpenCV Haar Cascade fallback (sensitive: minNeighbors=3)
     if not boxes and haar_cascades:
         try:
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             for cascade in haar_cascades:
                 haar_faces = cascade.detectMultiScale(
                     gray,
-                    scaleFactor=1.15,
-                    minNeighbors=6,
-                    minSize=(50, 50)
+                    scaleFactor=1.1,
+                    minNeighbors=3,
+                    minSize=(30, 30)
                 )
                 if len(haar_faces) > 0:
                     for (hx, hy, hw, hh) in haar_faces:
@@ -302,6 +321,14 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False, is_live_
                     break
         except Exception as haar_err:
             print("Haar cascade fallback error:", haar_err)
+
+    # 4. If live camera and still no box detected, focus on center face region
+    if not boxes and is_live_camera:
+        cx1 = int(frame_width * 0.18)
+        cy1 = int(frame_height * 0.10)
+        cw = int(frame_width * 0.64)
+        ch = int(frame_height * 0.75)
+        boxes.append((cx1, cy1, cw, ch))
 
     # -----------------------------------------------------
     # Apply Non-Maximum Suppression (Merge duplicate boxes)
