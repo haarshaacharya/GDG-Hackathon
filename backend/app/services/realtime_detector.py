@@ -12,52 +12,11 @@ from mediapipe.tasks.python import vision
 
 
 MODEL_PATH = "models/face_detector.tflite"
-AI_MODEL = "prithivMLmods/deepfake-detector-model-v1"
-
-
-print("Loading FakeShield AI model...")
-
-processor = AutoImageProcessor.from_pretrained(AI_MODEL)
-model = AutoModelForImageClassification.from_pretrained(AI_MODEL)
-
-model.eval()
-
-print("✅ Deepfake AI model loaded.")
-
+from app.services.deepfake_detector import detect_deepfake_and_ai
 
 def predict_face(face_crop):
-
-    # OpenCV BGR → RGB
-    rgb_face = cv2.cvtColor(
-        face_crop,
-        cv2.COLOR_BGR2RGB
-    )
-
-    # NumPy → PIL
-    image = Image.fromarray(rgb_face)
-
-    # Prepare model input
-    inputs = processor(
-        images=image,
-        return_tensors="pt"
-    )
-
-    # AI prediction
-    with torch.no_grad():
-        outputs = model(**inputs)
-
-    probabilities = torch.softmax(
-        outputs.logits,
-        dim=-1
-    )[0]
-
-    fake_score = probabilities[0].item()
-    real_score = probabilities[1].item()
-
-    if fake_score > real_score:
-        return "FAKE", fake_score
-
-    return "REAL", real_score
+    res = detect_deepfake_and_ai(face_crop)
+    return res["result"], res["confidence"] / 100.0
 
 
 def start_realtime_detection():

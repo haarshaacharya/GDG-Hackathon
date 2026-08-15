@@ -892,20 +892,45 @@ body {
 }
 
 
-.analysis-eyebrow {
-
-  display: block;
-
+.analysis-eyebrow-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+}
 
+.analysis-eyebrow {
+  display: inline-block;
   color: #aeb9d0;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+}
 
-  font-size: 13px;
-
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: 700;
+  letter-spacing: 0.2px;
+}
 
-  letter-spacing: 0.5px;
+.badge-real {
+  background: rgba(32, 232, 137, 0.12);
+  border: 1px solid rgba(32, 232, 137, 0.35);
+  color: #35e890;
+  box-shadow: 0 0 15px rgba(32, 232, 137, 0.15);
+}
 
+.badge-fake {
+  background: rgba(255, 84, 112, 0.12);
+  border: 1px solid rgba(255, 84, 112, 0.35);
+  color: #ff5470;
+  box-shadow: 0 0 15px rgba(255, 84, 112, 0.15);
 }
 
 
@@ -1032,6 +1057,100 @@ body {
 
   font-weight: 900;
 
+}
+
+
+/* =========================================================
+   FORENSIC SIGNALS & EVIDENCE
+   ========================================================= */
+
+.forensic-signals-section {
+  margin-bottom: 30px;
+  padding: 22px 24px;
+  border-radius: 20px;
+  background: rgba(11, 18, 34, 0.75);
+  border: 1px solid rgba(120, 160, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.signals-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.signals-icon {
+  font-size: 18px;
+}
+
+.signals-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #e2e8f6;
+  text-transform: uppercase;
+}
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+}
+
+.signal-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  transition: transform 0.2s ease;
+}
+
+.signal-item:hover {
+  transform: translateX(3px);
+}
+
+.signal-real {
+  background: rgba(32, 232, 137, 0.07);
+  border: 1px solid rgba(32, 232, 137, 0.22);
+  color: #c9f7de;
+}
+
+.signal-real .signal-bullet {
+  color: #35e890;
+  font-weight: 900;
+}
+
+.signal-ai {
+  background: rgba(255, 84, 112, 0.08);
+  border: 1px solid rgba(255, 84, 112, 0.25);
+  color: #ffccd4;
+}
+
+.signal-ai .signal-bullet {
+  color: #ff5470;
+  font-weight: 900;
+}
+
+.signal-text {
+  flex: 1;
+}
+
+.face-info-block {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.face-sub-category {
+  font-size: 11px;
+  color: #8da0c4;
+  font-weight: 600;
 }
 
 

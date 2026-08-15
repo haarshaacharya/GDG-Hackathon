@@ -246,41 +246,31 @@ function App() {
         overallResult: "UNKNOWN",
         averageConfidence: 0,
         flaggedFaces: 0,
+        category: "Analysis Complete",
+        signals: [],
       };
     }
 
-    const predictions =
-      result.predictions;
+    const predictions = result.predictions;
 
-    const totalConfidence =
-      predictions.reduce(
-        (total, prediction) =>
-          total +
-          Number(
-            prediction.confidence || 0
-          ),
-        0
-      );
+    const totalConfidence = predictions.reduce(
+      (total, prediction) =>
+        total + Number(prediction.confidence || 0),
+      0
+    );
 
     const averageConfidence =
-      totalConfidence /
-      predictions.length;
+      totalConfidence / predictions.length;
 
-    const flaggedFaces =
-      predictions.filter(
-        (prediction) =>
-          String(
-            prediction.result
-          ).toUpperCase() === "FAKE"
-      ).length;
+    const flaggedFaces = predictions.filter(
+      (prediction) =>
+        String(prediction.result).toUpperCase() === "FAKE"
+    ).length;
 
-    const realFaces =
-      predictions.filter(
-        (prediction) =>
-          String(
-            prediction.result
-          ).toUpperCase() === "REAL"
-      ).length;
+    const realFaces = predictions.filter(
+      (prediction) =>
+        String(prediction.result).toUpperCase() === "REAL"
+    ).length;
 
     let overallResult = "UNKNOWN";
 
@@ -290,10 +280,20 @@ function App() {
       overallResult = "REAL";
     }
 
+    const category =
+      result.category ||
+      (overallResult === "FAKE"
+        ? "AI-Generated / Deepfake Image"
+        : "Real Human / Mobile Camera Photo");
+
+    const signals = result.signals || predictions[0]?.signals || [];
+
     return {
       overallResult,
       averageConfidence,
       flaggedFaces,
+      category,
+      signals,
     };
   };
 
@@ -1017,9 +1017,17 @@ function App() {
 
               <div>
 
-                <span className="analysis-eyebrow">
-                  ANALYSIS COMPLETE
-                </span>
+                <div className="analysis-eyebrow-row">
+                  <span className="analysis-eyebrow">
+                    ANALYSIS COMPLETE
+                  </span>
+                  {imageStats.category && (
+                    <span className={`category-badge ${imageStats.overallResult === "FAKE" ? "badge-fake" : "badge-real"}`}>
+                      {imageStats.overallResult === "FAKE" ? "🤖 " : "📸 "}
+                      {imageStats.category}
+                    </span>
+                  )}
+                </div>
 
                 <h2>
                   Analysis Result
@@ -1101,6 +1109,42 @@ function App() {
             </div>
 
 
+            {/* FORENSIC SIGNALS & EVIDENCE */}
+
+            {imageStats.signals && imageStats.signals.length > 0 && (
+
+              <div className="forensic-signals-section">
+
+                <div className="signals-header">
+                  <span className="signals-icon">🔬</span>
+                  <h4>Forensic Verification & Detection Signals</h4>
+                </div>
+
+                <div className="signals-grid">
+                  {imageStats.signals.map((signal, sIdx) => {
+                    const isAiSignal = signal.toLowerCase().includes("ai") ||
+                                       signal.toLowerCase().includes("synthetic") ||
+                                       signal.toLowerCase().includes("artifact") ||
+                                       signal.toLowerCase().includes("irregularit");
+                    return (
+                      <div
+                        key={`sig-${sIdx}`}
+                        className={`signal-item ${isAiSignal ? "signal-ai" : "signal-real"}`}
+                      >
+                        <span className="signal-bullet">
+                          {isAiSignal ? "⚠" : "✓"}
+                        </span>
+                        <span className="signal-text">{signal}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+              </div>
+
+            )}
+
+
             {/* FACE BY FACE */}
 
             <div className="face-analysis">
@@ -1158,11 +1202,19 @@ function App() {
 
                           <div className="face-result-main">
 
-                            <span className="face-label">
-                              Face{" "}
-                              {prediction.face ||
-                                index + 1}
-                            </span>
+                            <div className="face-info-block">
+                              <span className="face-label">
+                                Face{" "}
+                                {prediction.face ||
+                                  index + 1}
+                              </span>
+
+                              {prediction.category && (
+                                <span className="face-sub-category">
+                                  {prediction.category}
+                                </span>
+                              )}
+                            </div>
 
 
                             <strong
