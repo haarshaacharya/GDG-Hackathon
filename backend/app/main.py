@@ -227,7 +227,7 @@ def apply_nms(boxes, iou_threshold=0.50):
 # HELPER: ANALYZE FRAME
 # =========================================================
 
-def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False):
+def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False, is_live_camera=False):
     """
     Detect all faces in an OpenCV BGR frame and run multi-signal deepfake/AI prediction.
     If MediaPipe detects no faces, tries OpenCV Haar Cascade fallback.
@@ -322,9 +322,9 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False):
             if face_crop.size == 0:
                 continue
 
-            # Multi-signal AI & Deepfake Detection
+            # Multi-signal AI & Deepfake Detection (with live camera eye openness check)
             with prediction_lock:
-                pred_result = detect_deepfake_and_ai(face_crop, raw_bytes=raw_bytes)
+                pred_result = detect_deepfake_and_ai(face_crop, raw_bytes=raw_bytes, is_live_camera=is_live_camera)
 
             predictions.append({
                 "face": face_index,
@@ -353,7 +353,7 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False):
     if not predictions and allow_fallback:
         try:
             with prediction_lock:
-                pred_result = detect_deepfake_and_ai(frame, raw_bytes=raw_bytes)
+                pred_result = detect_deepfake_and_ai(frame, raw_bytes=raw_bytes, is_live_camera=is_live_camera)
 
             predictions.append({
                 "face": 1,
@@ -512,7 +512,8 @@ async def predict_camera_frame(
         predictions = analyze_frame(
             frame,
             raw_bytes=raw_bytes,
-            allow_fallback=True
+            allow_fallback=True,
+            is_live_camera=True
         )
 
         if not predictions:

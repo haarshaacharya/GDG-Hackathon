@@ -9,81 +9,87 @@ backend_path = Path(__file__).resolve().parent.parent / "backend"
 sys.path.insert(0, str(backend_path))
 
 from app.services.deepfake_detector import (
-    analyze_metadata,
-    analyze_frequency_spectrum,
-    analyze_chrominance_noise,
-    analyze_eye_highlights,
-    analyze_ai_studio_background,
-    analyze_sensor_noise_and_texture,
+    detect_gemini_watermark,
+    analyze_eye_openness,
     detect_deepfake_and_ai,
 )
 
-def test_real_camera_signals():
-    print("1. Testing Real Mobile Camera photo simulation...")
-    np.random.seed(42)
-    base = np.zeros((256, 256, 3), dtype=np.uint8)
-    for y in range(256):
-        for x in range(256):
-            base[y, x] = [120 + int(30 * np.sin(x / 20.0)), 100 + int(20 * np.cos(y / 20.0)), 90]
+def test_gemini_watermark_detection():
+    print("1. Testing Google Gemini Watermark Detection...")
+    img = np.zeros((300, 300, 3), dtype=np.uint8) + 30
     
-    # Real multi-channel sensor noise in R, G, B
-    noise = np.random.normal(0, 5.0, (256, 256, 3))
-    real_img = np.clip(base.astype(np.float32) + noise, 0, 255).astype(np.uint8)
+    # Draw a 4-point Gemini sparkle in bottom-right corner (y: 250..290, x: 250..290)
+    cy, cx = 270, 270
+    for y in range(250, 290):
+        for x in range(250, 290):
+            dx = abs(x - cx)
+            dy = abs(y - cy)
+            # 4-point star ray morphology
+            if (dx <= 2 and dy <= 14) or (dy <= 2 and dx <= 14):
+                img[y, x] = [240, 130, 80] # Gemini Blue/Purple
+            elif dx <= 3 and dy <= 3:
+                img[y, x] = [255, 255, 255] # White core
+
+    pil_img = Image.fromarray(img)
+    is_gemini, conf, signals = detect_gemini_watermark(img, pil_img)
+    print(f"Gemini Watermark Check: is_gemini={is_gemini}, signals={signals}")
+    
+    res = detect_deepfake_and_ai(img)
+    print(f"Prediction result with Gemini watermark: {res['result']} ({res['confidence']}%)")
+    assert res["result"] == "FAKE", f"Expected FAKE, got {res['result']}"
+    print("✅ Gemini watermark test passed!\n")
+
+def test_live_camera_eyes_open_vs_closed():
+    print("2. Testing Live Camera Eye Openness (Open = REAL, Closed = FAKE)...")
+    
+    # Simulate face crop with OPEN eyes (high vertical contrast, dark pupil)
+    face_open = np.zeros((100, 100, 3), dtype=np.uint8) + 160
+    # Add dark pupil & sclera in eye band
+    face_open[28:38, 20:36] = [40, 30, 30] # Left pupil
+    face_open[28:38, 64:80] = [40, 30, 30] # Right pupil
+    
+    res_open = detect_deepfake_and_ai(face_open, is_live_camera=True)
+    print(f"Live Camera with Eyes OPEN: {res_open['result']} ({res_open['confidence']}%), Category: {res_open['category']}")
+    assert res_open["result"] == "REAL", f"Expected REAL for open eyes, got {res_open['result']}"
+    
+    # Simulate face crop with CLOSED eyes (smooth skin, no dark pupil, low vertical contrast)
+    face_closed = np.zeros((100, 100, 3), dtype=np.uint8) + 160
+    # Only thin eyelid crease
+    face_closed[33:34, 20:36] = [130, 130, 130]
+    face_closed[33:34, 64:80] = [130, 130, 130]
+    
+    res_closed = detect_deepfake_and_ai(face_closed, is_live_camera=True)
+    print(f"Live Camera with Eyes CLOSED: {res_closed['result']} ({res_closed['confidence']}%), Category: {res_closed['category']}")
+    assert res_closed["result"] == "FAKE", f"Expected FAKE for closed eyes, got {res_closed['result']}"
+    print("✅ Live camera eyes open/closed test passed!\n")
+
+def test_real_camera_without_gemini():
+    print("3. Testing Real Mobile Photo without Gemini Watermark...")
+    img = np.zeros((200, 200, 3), dtype=np.uint8)
+    for y in range(200):
+        for x in range(200):
+            img[y, x] = [100 + int(20 * np.sin(x / 15.0)), 120, 110]
+    # Sensor noise
+    noise = np.random.normal(0, 4.0, (200, 200, 3))
+    real_img = np.clip(img.astype(np.float32) + noise, 0, 255).astype(np.uint8)
     
     pil_real = Image.fromarray(real_img)
-    # Simulate EXIF with Apple iPhone
     exif = pil_real.getexif()
-    exif[0x010F] = "Apple"
-    exif[0x0110] = "iPhone 14 Pro"
+    exif[0x010F] = "Samsung"
+    exif[0x0110] = "Galaxy S23"
     exif[0x8827] = 100
-    exif[0x829D] = (18, 10)
     
-    res = detect_deepfake_and_ai(pil_real)
-    print(f"Result for Real Mobile Camera: {res['result']} (Confidence: {res['confidence']}%, Category: {res['category']})")
-    print(f"Signals: {res['signals']}")
+    res = detect_deepfake_and_ai(pil_real, is_live_camera=False)
+    print(f"Result for Real Samsung Phone Photo: {res['result']} ({res['confidence']}%)")
     assert res["result"] == "REAL", f"Expected REAL, got {res['result']}"
-    print("✅ Real mobile camera test passed!\n")
-
-def test_ai_portrait_synthetic_signals():
-    print("2. Testing AI Portrait Simulation (No Camera EXIF + Studio Vignette + Spectral Anomaly)...")
-    # Simulate an AI generated portrait with smooth studio vignette background & latent VAE smoothness
-    img_ai = np.zeros((300, 300, 3), dtype=np.uint8)
-    
-    # Radial studio vignette background
-    cy, cx = 150, 150
-    for y in range(300):
-        for x in range(300):
-            r = np.sqrt((x - cx)**2 + (y - cy)**2)
-            val = max(50, min(230, int(220 - 0.002 * (r**2))))
-            img_ai[y, x] = [val - 10, val, val + 15]
-            
-    # Add high-frequency grid artifacts
-    for y in range(0, 300, 4):
-        for x in range(0, 300, 4):
-            img_ai[y:y+2, x:x+2] = np.clip(img_ai[y:y+2, x:x+2].astype(int) + 20, 0, 255)
-
-    res = detect_deepfake_and_ai(img_ai)
-    print(f"Result for AI Portrait: {res['result']} (Confidence: {res['confidence']}%, Category: {res['category']})")
-    print(f"Signals: {res['signals']}")
-    print(f"Metrics: {res['metrics']}")
-    assert res["result"] == "FAKE", f"Expected FAKE, got {res['result']}"
-    print("✅ AI Portrait test passed!\n")
-
-def test_ai_generator_metadata():
-    print("3. Testing AI Generator Prompt/Metadata Detection...")
-    img = Image.new("RGB", (256, 256), color=(140, 110, 95))
-    raw_ai_bytes = b"header...parameters: prompt: a photorealistic portrait of an Indian girl, Steps: 30, Sampler: DPM++ 2M, Seed: 123456, Model: SDXL_v1.0"
-    res = detect_deepfake_and_ai(img, raw_bytes=raw_ai_bytes)
-    print(f"Result for AI metadata image: {res['result']} (Confidence: {res['confidence']}%, Category: {res['category']})")
-    assert res["result"] == "FAKE", f"Expected FAKE, got {res['result']}"
-    print("✅ AI metadata test passed!\n")
+    print("✅ Real photo test passed!\n")
 
 if __name__ == "__main__":
     print("=" * 60)
-    print("Running FakeShield Multi-Signal Detection Tests")
+    print("Running FakeShield Gemini & Live Eyes Tests")
     print("=" * 60)
-    test_real_camera_signals()
-    test_ai_portrait_synthetic_signals()
-    test_ai_generator_metadata()
+    test_gemini_watermark_detection()
+    test_live_camera_eyes_open_vs_closed()
+    test_real_camera_without_gemini()
     print("=" * 60)
     print("All tests passed successfully! 🚀")

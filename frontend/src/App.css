@@ -1891,17 +1891,18 @@ body {
 
   border: 2px solid;
 
-  border-radius: 10px;
+  border-radius: 12px;
 
   pointer-events: none;
 
   z-index: 10;
 
   transition:
-    left .15s linear,
-    top .15s linear,
-    width .15s linear,
-    height .15s linear;
+    left .12s ease-out,
+    top .12s ease-out,
+    width .12s ease-out,
+    height .12s ease-out,
+    border-color .2s ease;
 
 }
 
@@ -1927,18 +1928,38 @@ body {
 
 }
 
+.camera-face-box.face-locked {
+  border-width: 2.5px;
+}
+
+.camera-face-box.face-tracking {
+  border-style: dashed;
+  animation: pulseTracking 1.2s infinite alternate;
+}
+
+@keyframes pulseTracking {
+  0% { opacity: 0.85; transform: scale(0.995); }
+  100% { opacity: 1; transform: scale(1.005); }
+}
+
 
 .camera-face-label {
 
   position: absolute;
 
-  top: -34px;
+  top: -38px;
 
   left: 0;
 
-  padding: 6px 10px;
+  display: flex;
 
-  border-radius: 8px;
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
 
   font-size: 11px;
 
@@ -1946,28 +1967,74 @@ body {
 
   white-space: nowrap;
 
-}
+  background: rgba(8, 14, 28, 0.94);
 
+  border: 1px solid rgba(255, 255, 255, 0.18);
 
-.camera-face-box.real
-.camera-face-label {
+  backdrop-filter: blur(12px);
 
-  background:
-    rgba(53,232,144,.95);
-
-  color: #03140b;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
 
 }
 
 
-.camera-face-box.fake
-.camera-face-label {
+.camera-status-pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+}
 
-  background:
-    rgba(255,84,112,.95);
+.pill-locked {
+  background: rgba(53, 232, 144, 0.2);
+  color: #35e890;
+  border: 1px solid rgba(53, 232, 144, 0.4);
+}
 
-  color: white;
+.pill-moving {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+}
 
+.camera-eye-pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.eye-open {
+  background: rgba(53, 232, 144, 0.18);
+  color: #35e890;
+}
+
+.eye-closed {
+  background: rgba(255, 84, 112, 0.22);
+  color: #ff5470;
+  border: 1px solid rgba(255, 84, 112, 0.5);
+  animation: eyeBlinkWarn 0.8s infinite;
+}
+
+@keyframes eyeBlinkWarn {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.camera-verdict {
+  font-size: 12px;
+}
+
+.camera-face-box.real .camera-verdict {
+  color: #35e890;
+}
+
+.camera-face-box.fake .camera-verdict {
+  color: #ff5470;
+}
+
+.camera-conf-val {
+  color: #ffffff;
+  font-weight: 800;
 }
 
 
