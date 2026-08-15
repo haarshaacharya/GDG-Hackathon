@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     libsm6 \
     libxext6 \
+    libegl1 \
+    libgles2 \
+    libgl1-mesa-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -22,4 +25,3 @@ COPY . .
 EXPOSE 8000
 
 CMD ["python", "run.py"]
-

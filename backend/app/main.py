@@ -67,19 +67,25 @@ if not MODEL_PATH.exists():
 # SHARED MEDIAPIPE DETECTOR
 # =========================================================
 
-base_options = python.BaseOptions(
-    model_asset_path=str(MODEL_PATH)
-)
+face_detector = None
+try:
+    base_options = python.BaseOptions(
+        model_asset_path=str(MODEL_PATH)
+    )
 
-face_detector_options = vision.FaceDetectorOptions(
-    base_options=base_options,
-    running_mode=vision.RunningMode.IMAGE,
-    min_detection_confidence=0.20
-)
+    face_detector_options = vision.FaceDetectorOptions(
+        base_options=base_options,
+        running_mode=vision.RunningMode.IMAGE,
+        min_detection_confidence=0.20
+    )
 
-face_detector = vision.FaceDetector.create_from_options(
-    face_detector_options
-)
+    face_detector = vision.FaceDetector.create_from_options(
+        face_detector_options
+    )
+    print("✅ MediaPipe FaceDetector initialized successfully.")
+except Exception as mp_init_err:
+    print(f"⚠️ MediaPipe FaceDetector init note: {mp_init_err}. Using OpenCV Cascades.")
+    face_detector = None
 
 # Secondary Haar cascade detectors as fallback
 haar_cascades = []
@@ -255,12 +261,13 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False, is_live_
     # 1. MediaPipe face detection
     # -----------------------------------------------------
     detections = []
-    try:
-        with detector_lock:
-            result = face_detector.detect(mp_image)
-            detections = result.detections or []
-    except Exception as mp_err:
-        print("MediaPipe detection error:", mp_err)
+    if face_detector is not None:
+        try:
+            with detector_lock:
+                result = face_detector.detect(mp_image)
+                detections = result.detections or []
+        except Exception as mp_err:
+            print("MediaPipe detection error:", mp_err)
 
     boxes = []
 
