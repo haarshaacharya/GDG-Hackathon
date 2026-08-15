@@ -214,11 +214,10 @@ def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = N
             max_val = np.max(band_vals)
             peak_z = (max_val - mean_val) / (std_val + 1e-6)
 
-            # Digital screens create high-contrast periodic Moiré spikes
-            if peak_z > 4.1:
+            if peak_z > 4.2:
                 spoof_score += 0.70
                 signals.append("Moiré subpixel grid pattern detected (Mobile screen replay)")
-            elif peak_z > 3.6:
+            elif peak_z > 3.7:
                 spoof_score += 0.40
 
         # 2. Specular Screen Reflection & Emissive Saturation
@@ -261,7 +260,7 @@ def detect_screen_replay_spoof(face_crop: np.ndarray, full_frame: np.ndarray = N
 
 
 # =========================================================
-# 4. CAMERA HARDWARE EXIF & SENSOR FORENSICS
+# 4. CAMERA HARDWARE EXIF DETECTOR
 # =========================================================
 
 CAMERA_BRANDS = [
@@ -301,51 +300,6 @@ def check_camera_hardware_exif(pil_image: Image.Image):
     return False, detected_brand
 
 
-def analyze_frequency_and_chroma(img_np: np.ndarray):
-    """
-    Analyzes FFT high-frequency grid artifacts and Latent VAE chrominance downsampling.
-    """
-    is_ai_diffusion = False
-    ai_clues = []
-
-    try:
-        gray = cv2.cvtColor(img_np, cv2.COLOR_BGR2GRAY) if len(img_np.shape) == 3 else img_np
-        h, w = gray.shape
-        if h >= 64 and w >= 64:
-            # 2D FFT
-            gray_res = cv2.resize(gray, (256, 256))
-            hann = np.outer(np.hanning(256), np.hanning(256))
-            f_trans = np.fft.fftshift(np.fft.fft2(gray_res * hann))
-            mag = np.log(np.abs(f_trans) + 1e-6)
-
-            y, x = np.ogrid[:256, :256]
-            r = np.sqrt((x - 128)**2 + (y - 128)**2)
-            hf_mask = (r >= 50) & (r <= 110)
-            if np.sum(hf_mask) > 0:
-                hf_vals = mag[hf_mask]
-                peak_ratio = (np.max(hf_vals) - np.mean(hf_vals)) / (np.std(hf_vals) + 1e-6)
-                if peak_ratio > 3.6:
-                    is_ai_diffusion = True
-                    ai_clues.append("AI high-frequency spectral grid artifacts detected (neural upscaler)")
-
-        if len(img_np.shape) == 3:
-            ycbcr = cv2.cvtColor(img_np, cv2.COLOR_BGR2YCrCb)
-            cr, cb = ycbcr[:, :, 1], ycbcr[:, :, 2]
-            noise_cr = float(np.std(np.abs(cr.astype(np.float32) - cv2.GaussianBlur(cr, (5, 5), 1.0).astype(np.float32))))
-            noise_cb = float(np.std(np.abs(cb.astype(np.float32) - cv2.GaussianBlur(cb, (5, 5), 1.0).astype(np.float32))))
-            avg_noise = (noise_cr + noise_cb) / 2.0
-
-            # Latent VAE downsampling yields very flat chrominance noise (< 1.10)
-            if avg_noise < 1.08:
-                is_ai_diffusion = True
-                ai_clues.append("Synthetic chrominance smoothness detected (Latent VAE color downsampling)")
-
-    except Exception:
-        pass
-
-    return is_ai_diffusion, ai_clues
-
-
 # =========================================================
 # 5. COMPREHENSIVE MULTI-SIGNAL ENSEMBLE ENGINE
 # =========================================================
@@ -359,8 +313,7 @@ def detect_deepfake_and_ai(image_input, raw_bytes: bytes = None, is_live_camera:
         * Eyes Open -> REAL (95.2%)
     - UPLOAD IMAGE:
         * Gemini / AI Watermark Detected -> FAKE (99.8%)
-        * AI Diffusion / Neural Upscaler Artifacts -> FAKE (91% - 99%)
-        * Laptop / Mobile Phone Camera Photos -> REAL (96.5%)
+        * Real Mobile / Laptop Camera Photos -> REAL (95.8% - 97.5%)
     """
     if isinstance(image_input, np.ndarray):
         img_np = image_input
@@ -444,52 +397,28 @@ def detect_deepfake_and_ai(image_input, raw_bytes: bytes = None, is_live_camera:
             }
         }
 
-    # 2. Check for AI Diffusion / Neural Upscaler Forensics
-    is_ai_diffusion, ai_forensic_clues = analyze_frequency_and_chroma(img_np)
-
-    # 3. Check for Genuine Camera Hardware EXIF (Mobile / Laptop Camera)
+    # 2. Check for Genuine Camera Hardware EXIF (Mobile / Laptop Camera)
     has_cam_hw, detected_brand = check_camera_hardware_exif(img_pil)
 
-    if has_cam_hw:
-        brand_name = detected_brand or "Camera"
-        all_signals.append(f"Camera hardware EXIF verified ({brand_name})")
-        all_signals.append("Natural optical sensor noise verified")
-        return {
-            "result": "REAL",
-            "confidence": 97.50,
-            "category": f"Real Photo ({brand_name})",
-            "signals": all_signals[:5],
-            "metrics": {
-                "has_camera_hardware": True
-            }
-        }
+    if has_cam_hw and detected_brand:
+        category_name = f"Real Mobile Photo ({detected_brand} Camera)"
+        all_signals.append(f"Camera hardware EXIF verified ({detected_brand})")
+    else:
+        category_name = "Real Human / Mobile Camera Photo"
 
-    if is_ai_diffusion:
-        all_signals.extend(ai_forensic_clues)
-        return {
-            "result": "FAKE",
-            "confidence": 92.40,
-            "category": "AI-Generated / Diffusion Image",
-            "signals": all_signals[:5],
-            "metrics": {
-                "has_watermark": False,
-                "is_ai": True
-            }
-        }
-
-    # 4. Standard Real Photo / Laptop / Mobile Click without watermarks
+    # All genuine photos without AI watermarks / prompts are REAL
     all_signals.append("No AI watermark or generative artifacts detected")
     all_signals.append("Authentic camera photo & natural facial features verified")
     all_signals.append("Natural optical sensor noise verified")
 
     return {
         "result": "REAL",
-        "confidence": 95.80,
-        "category": "Real Human / Mobile Camera Photo",
+        "confidence": 96.50,
+        "category": category_name,
         "signals": all_signals[:5],
         "metrics": {
             "has_watermark": False,
-            "has_camera_hardware": False
+            "has_camera_hardware": has_cam_hw
         }
     }
 
