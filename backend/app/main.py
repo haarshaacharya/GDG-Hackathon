@@ -322,9 +322,9 @@ def analyze_frame(frame, raw_bytes: bytes = None, allow_fallback=False, is_live_
             if face_crop.size == 0:
                 continue
 
-            # Multi-signal AI & Deepfake Detection (with live camera eye openness check)
+            # Multi-signal AI & Deepfake Detection (with live camera eye openness and screen replay check)
             with prediction_lock:
-                pred_result = detect_deepfake_and_ai(face_crop, raw_bytes=raw_bytes, is_live_camera=is_live_camera)
+                pred_result = detect_deepfake_and_ai(face_crop, raw_bytes=raw_bytes, is_live_camera=is_live_camera, full_frame=frame)
 
             predictions.append({
                 "face": face_index,
